@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<script>window.doLogin=function(){var i=document.getElementById('login-pass'),e=document.getElementById('login-err'),p=localStorage.getItem('lamsay_admin_pass')||'lamsay2025';if(i&&i.value===p){sessionStorage.setItem('lamsay_logged','yes');var s=document.getElementById('login-screen');if(s)s.style.display='none';}else{if(e){e.style.display='block';e.textContent='\u274c \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d\u0629';}if(i){i.value='';i.focus();}}};window.doLogout=function(){sessionStorage.removeItem('lamsay_logged');location.reload()};</script>
+<script>
+/* lamsay-login-fix-v3 */
+window.doLogin=function(){var i=document.getElementById('login-pass'),e=document.getElementById('login-err'),p=localStorage.getItem('lamsay_admin_pass')||'lamsay2025';if(i&&i.value===p){sessionStorage.setItem('lamsay_logged','yes');var s=document.getElementById('login-screen');if(s)s.style.display='none';if(e)e.style.display='none';}else{if(e){e.style.display='block';e.textContent='❌ كلمة المرور غير صحيحة';}if(i){i.value='';i.focus();}}};
+window.doLogout=function(){sessionStorage.removeItem('lamsay_logged');location.reload();};
+document.addEventListener('DOMContentLoaded',function(){var b=document.querySelector('#login-screen button');if(b)b.onclick=window.doLogin;var i=document.getElementById('login-pass');if(i)i.onkeydown=function(e){if(e.key==='Enter')window.doLogin();};});
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>lamsay — لوحة التحكم</title>
@@ -780,7 +785,27 @@ document.addEventListener('DOMContentLoaded', function() {
         onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#2a2a2a'">
     </div>
     <div id="login-err" style="font-size:12px;color:#e05555;margin-bottom:14px;display:none;background:rgba(224,85,85,.1);border-radius:8px;padding:8px">❌ كلمة المرور غير صحيحة</div>
-    <button onclick="doLogin()" 
+    <script>
+function doLogin() {
+  var input = document.getElementById("login-pass");
+  var err = document.getElementById("login-err");
+  var pass = localStorage.getItem("lamsay_admin_pass") || "lamsay2025";
+  if (input && input.value === pass) {
+    sessionStorage.setItem("lamsay_logged", "yes");
+    document.getElementById("login-screen").style.display = "none";
+    if(err) err.style.display = "none";
+  } else {
+    if(err) { err.style.display = "block"; err.textContent = "❌ كلمة المرور غير صحيحة"; }
+    if(input) input.value = "";
+    if(input) input.focus();
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem("lamsay_logged");
+  location.reload();
+}
+</script>
+<button onclick="doLogin()" 
       style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;transition:background .15s"
       onmouseover="this.style.background='#E8C96A'" onmouseout="this.style.background='#C9A84C'">
       تسجيل الدخول
