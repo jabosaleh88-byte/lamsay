@@ -1,124 +1,558 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page not found</title>
-    <style>
-      :root {
-        --colorRgbFacetsTeal600: 2 128 125;
-        --colorTealAction: var(--colorRgbFacetsTeal600);
-        --colorRgbFacetsNeutralLight200: 233 235 237;
-        --colorHr: var(--colorRgbFacetsNeutralLight200);
-        --colorRgbFacetsNeutralLight700: 53 58 62;
-        --colorGrayDarkest: var(--colorRgbFacetsNeutralLight700);
-        --colorGrayLighter: var(--colorRgbFacetsNeutralLight200);
-        --colorText: var(--colorGrayDarkest);
-        --effectShadowLightShallow: 0 1px 10px 0 rgb(53 58 62 / 6%),
-          0 2px 4px 0 rgb(53 58 62 / 8%);
-        --colorRgbFacetsNeutralDark900: 6 11 16;
-      }
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
-          "Segoe UI Emoji", "Segoe UI Symbol";
-        background: white;
-        overflow: hidden;
-        margin: 0;
-        padding: 0;
-        line-height: 1.5;
-        color: rgb(var(--colorText));
-      }
+<html lang="ar" dir="rtl" id="root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="لمسة">
+<meta name="theme-color" content="#C9A84C">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23C9A84C'/><text x='50' y='68' font-size='52' text-anchor='middle'>💄</text></svg>">
+<title>لمسة — تطبيق الجمال</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{--gold:#C9A84C;--gold-l:#E8C96A;--gold-d:#9A7A30;--black:#0A0A0A;--dark:#111;--dark2:#1A1A1A;--dark3:#222;--g:#777;--gl:#aaa;--w:#fff;--red:#e05555;--green:#5ec887;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{font-family:'Cairo',sans-serif;background:var(--black);color:var(--w);display:flex;flex-direction:column}
+body.ltr{font-family:'Poppins',sans-serif;direction:ltr}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input{font-family:inherit}
+::-webkit-scrollbar{display:none}
 
-      @media (prefers-color-scheme: dark) {
-        body {
-          background: rgb(var(--colorRgbFacetsNeutralDark900));
-        }
-      }
+/* ── STATUS BAR SPACER ── */
+.status-bar{height:var(--safe-top);background:var(--dark);flex-shrink:0}
 
-      h1 {
-        margin: 0;
-        font-size: 1.375rem;
-        line-height: 1;
-      }
+/* ── TOP NAV ── */
+.top-nav{background:var(--dark);border-bottom:1px solid #252525;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;padding-top:calc(12px + var(--safe-top))}
+.app-logo{font-size:22px;font-weight:800;color:var(--gold);flex:1}
+.app-logo small{display:block;font-size:10px;color:var(--gl);font-weight:400;letter-spacing:2px;margin-top:-3px}
+.top-actions{display:flex;gap:8px}
+.top-btn{width:38px;height:38px;background:var(--dark3);border:1px solid #2e2e2e;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--gl);position:relative;transition:all .15s}
+.top-btn:active{transform:scale(.95)}
+.top-btn.gold{background:var(--gold);color:var(--black);border-color:var(--gold)}
+.badge{position:absolute;top:-5px;left:-5px;background:var(--gold);color:var(--black);font-size:9px;font-weight:800;border-radius:50%;width:17px;height:17px;display:none;align-items:center;justify-content:center}
+.badge.show{display:flex}
 
-      h1 + p {
-        margin-top: 8px;
-      }
+/* ── SEARCH BAR ── */
+.search-bar{padding:10px 16px;background:var(--dark);border-bottom:1px solid #1e1e1e;flex-shrink:0}
+.search-inner{position:relative}
+.search-bar input{width:100%;background:var(--dark3);border:1px solid #2e2e2e;border-radius:12px;padding:10px 42px 10px 14px;font-size:13px;color:var(--w)}
+.search-bar input:focus{outline:none;border-color:var(--gold)}
+.search-bar input::placeholder{color:var(--g)}
+.s-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--g);font-size:16px;pointer-events:none}
+body.ltr .s-icon{left:auto;right:13px}
 
-      .main {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        width: 100vw;
-      }
+/* ── MAIN SCROLL ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
-      .card {
-        position: relative;
-        width: 75%;
-        max-width: 364px;
-        padding: 24px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: var(--effectShadowLightShallow);
-        border: 1px solid rgb(var(--colorGrayLighter));
-      }
+/* ── HERO STRIP ── */
+.hero-strip{background:linear-gradient(135deg,#1a1408,#0d0d0d);padding:28px 16px;text-align:center;position:relative;overflow:hidden}
+.hero-strip::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(201,168,76,.12) 0%,transparent 70%);pointer-events:none}
+.hero-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-size:11px;font-weight:700;border-radius:16px;padding:4px 12px;margin-bottom:14px}
+.hero-strip h1{font-size:26px;font-weight:800;line-height:1.2;margin-bottom:8px}
+.hero-strip h1 span{color:var(--gold)}
+.hero-strip p{font-size:13px;color:var(--gl);margin-bottom:18px}
+.hero-btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:var(--black);border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;transition:all .15s}
+.hero-btn:active{transform:scale(.97)}
 
-      a {
-        margin: 0;
-        font-weight: 600;
-        color: rgb(var(--colorTealAction));
-        text-decoration-skip-ink: all;
-        text-decoration-thickness: 1px;
-        text-underline-offset: 2px;
-        text-decoration-color: rgb(var(--colorTealAction) / 0.5);
-        transition: text-decoration-color 0.15s ease-in-out;
-      }
+/* ── OFFER BANNER ── */
+.offer-banner{margin:16px;background:linear-gradient(120deg,var(--gold-d),var(--gold));border-radius:16px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+.ob-txt h3{font-size:16px;font-weight:800;color:var(--black);margin-bottom:4px}
+.ob-txt p{font-size:12px;color:rgba(0,0,0,.6);margin-bottom:10px}
+.ob-btn{background:var(--black);color:var(--w);border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.ob-btn:active{opacity:.85}
+.ob-emoji{font-size:48px;flex-shrink:0}
+.countdown-s{display:flex;gap:8px;margin-top:10px}
+.cd{background:rgba(0,0,0,.18);border-radius:7px;padding:5px 10px;text-align:center}
+.cd span{font-size:16px;font-weight:800;color:var(--black);display:block}
+.cd small{font-size:9px;color:rgba(0,0,0,.55);font-weight:600}
 
-      a:hover,
-      a:focus-visible {
-        text-decoration-color: rgb(var(--colorTealAction));
-      }
+/* ── SECTION HEADER ── */
+.sec-hd{padding:0 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-hd h2{font-size:16px;font-weight:800}
+.sec-hd h2 span{color:var(--gold)}
+.sec-hd a{font-size:12px;color:var(--gold)}
+.sec-line{width:36px;height:2px;background:var(--gold);border-radius:2px;margin-top:5px}
 
-      p:last-of-type {
-        margin-bottom: 0;
-      }
+/* ── CATEGORIES SCROLL ── */
+.cats-scroll{display:flex;gap:12px;padding:0 16px 4px;overflow-x:auto;margin-bottom:20px}
+.cat-pill{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer}
+.cat-circle{width:62px;height:62px;background:var(--dark2);border:1px solid #252525;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all .2s}
+.cat-pill:active .cat-circle{transform:scale(.93)}
+.cat-pill.act .cat-circle{border-color:var(--gold);background:rgba(201,168,76,.1)}
+.cat-label{font-size:11px;font-weight:600;color:var(--gl);text-align:center;max-width:64px;line-height:1.2}
+.cat-pill.act .cat-label{color:var(--gold)}
 
-      hr {
-        border: 0;
-        height: 1px;
-        background: rgb(var(--colorHr));
-        margin-top: 16px;
-        margin-bottom: 16px;
-      }
+/* ── PRODUCTS GRID ── */
+.prods-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px;margin-bottom:24px}
+.prod-card{background:var(--dark2);border:1px solid #252525;border-radius:14px;overflow:hidden;transition:transform .15s}
+.prod-card:active{transform:scale(.97)}
+.prod-img{height:150px;background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+.prod-badges-m{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px}
+body.ltr .prod-badges-m{right:auto;left:8px}
+.badge-s{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
+.bs-sale{background:rgba(224,85,85,.2);color:#ff7c7c;border:1px solid rgba(224,85,85,.35)}
+.bs-new{background:rgba(94,200,135,.2);color:#5ec887;border:1px solid rgba(94,200,135,.35)}
+.bs-hot{background:rgba(201,168,76,.18);color:var(--gold);border:1px solid rgba(201,168,76,.35)}
+.prod-info-m{padding:12px}
+.prod-brand-m{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.prod-name-m{font-size:12px;font-weight:700;line-height:1.3;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod-price-m{font-size:15px;font-weight:800;color:var(--gold);margin-bottom:2px}
+.prod-old-m{font-size:11px;color:var(--g);text-decoration:line-through;margin-bottom:8px}
+.prod-add-m{width:100%;background:var(--gold);color:var(--black);border-radius:8px;padding:9px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;border:none;cursor:pointer;transition:opacity .15s}
+.prod-add-m:active{opacity:.8}
 
-      .your-site {
-        font-size: 0.875rem;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="main">
-      <div class="card">
-        <h1>Page not found</h1>
-        <p>
-          Looks like you’ve followed a broken link or entered a URL that doesn’t
-          exist on this site.
-        </p>
-        <hr />
-        <p class="your-site">
-          If this is your site, and you weren’t expecting a 404 for this path,
-          please visit Netlify’s
-          <a
-            href="https://answers.netlify.com/t/support-guide-i-ve-deployed-my-site-but-i-still-see-page-not-found/125?utm_source=404page&utm_campaign=community_tracking"
-            >“page not found” support guide</a
-          >
-          for troubleshooting tips.
-        </p>
+/* ── CART PAGE ── */
+.cart-page{position:absolute;inset:0;background:var(--black);z-index:200;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+body.ltr .cart-page{transform:translateX(100%)}
+.cart-page.open{transform:translateX(0)}
+.cart-page-hd{padding:16px;padding-top:calc(16px + var(--safe-top));background:var(--dark);border-bottom:1px solid #252525;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-btn{width:38px;height:38px;background:var(--dark3);border:1px solid #2e2e2e;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gl)}
+.back-btn:active{transform:scale(.93)}
+.cart-page-title{font-size:16px;font-weight:700;flex:1}
+.cart-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
+.cart-item-m{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #1e1e1e}
+.ci-img{width:58px;height:58px;background:var(--dark3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.ci-dets{flex:1}
+.ci-b{font-size:9px;color:var(--gold);font-weight:700;margin-bottom:2px}
+.ci-n{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:5px}
+.ci-p{font-size:14px;font-weight:800;color:var(--gold)}
+.ci-controls{display:flex;align-items:center;gap:8px;margin-top:8px}
+.qb{width:28px;height:28px;border:1px solid #3a3a3a;border-radius:7px;background:var(--dark3);color:var(--w);font-size:15px;display:flex;align-items:center;justify-content:center}
+.qb:active{border-color:var(--gold);color:var(--gold)}
+.rm-m{margin-right:auto;color:var(--g);font-size:17px}
+body.ltr .rm-m{margin-right:0;margin-left:auto}
+.cart-empty-m{text-align:center;padding:80px 20px;color:var(--g)}
+.cart-empty-m i{font-size:56px;display:block;margin-bottom:14px;color:#2a2a2a}
+.cart-empty-m p{font-size:14px;margin-bottom:20px}
+.cart-footer-m{padding:16px;padding-bottom:calc(16px + var(--safe-bot));background:var(--dark);border-top:1px solid #252525;flex-shrink:0}
+.cart-row-m{display:flex;justify-content:space-between;font-size:13px;color:var(--gl);padding:5px 0}
+.cart-total-m{font-size:17px;font-weight:800;color:var(--w);padding:12px 0 0;border-top:1px solid #252525;margin-top:5px;display:flex;justify-content:space-between}
+.cart-total-m span:last-child{color:var(--gold)}
+.checkout-m{width:100%;background:var(--gold);color:var(--black);border-radius:12px;padding:15px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;border:none;cursor:pointer}
+.checkout-m:active{background:var(--gold-l)}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{background:var(--dark);border-top:1px solid #252525;padding:8px 0;padding-bottom:calc(8px + var(--safe-bot));display:flex;flex-shrink:0}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;position:relative;cursor:pointer;transition:all .15s}
+.bn-item:active{transform:scale(.92)}
+.bn-icon{font-size:22px;color:var(--g)}
+.bn-label{font-size:9px;color:var(--g);font-weight:600}
+.bn-item.act .bn-icon,.bn-item.act .bn-label{color:var(--gold)}
+.bn-badge{position:absolute;top:0;right:calc(50% - 20px);background:var(--gold);color:var(--black);font-size:8px;font-weight:800;border-radius:50%;width:15px;height:15px;display:none;align-items:center;justify-content:center}
+.bn-badge.show{display:flex}
+
+/* ── INSTALL BANNER ── */
+.install-banner{margin:0 16px 16px;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ib-icon{font-size:32px;flex-shrink:0}
+.ib-txt{flex:1}
+.ib-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.ib-sub{font-size:11px;color:var(--g)}
+.ib-btn{background:var(--gold);color:var(--black);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;flex-shrink:0}
+.ib-btn:active{opacity:.85}
+.ib-close{font-size:18px;color:var(--g);margin-right:4px;cursor:pointer}
+body.ltr .ib-close{margin-right:0;margin-left:4px}
+
+/* ── LANG / CURR MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;backdrop-filter:blur(5px)}
+.modal-overlay.open{display:flex;align-items:flex-end}
+.modal-sheet{background:var(--dark2);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:calc(24px + var(--safe-bot));width:100%}
+.modal-handle{width:40px;height:4px;background:#333;border-radius:2px;margin:0 auto 20px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-option{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #252525;cursor:pointer}
+.modal-option:last-child{border:none}
+.modal-option-label{font-size:14px;font-weight:600}
+.modal-option-check{width:22px;height:22px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:calc(80px + var(--safe-bot));left:50%;transform:translateX(-50%) translateY(10px);background:var(--dark2);border:1px solid var(--gold-d);color:var(--w);padding:10px 22px;border-radius:10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast i{color:var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+</style>
+</head>
+<body>
+
+<!-- INSTALL PROMPT (iOS Safari) -->
+<div id="install-banner" class="install-banner" style="display:none;margin-top:12px">
+  <div class="ib-icon">💄</div>
+  <div class="ib-txt">
+    <div class="ib-title" id="ib-title">حمّلي التطبيق على هاتفك</div>
+    <div class="ib-sub" id="ib-sub">اضغطي على "مشاركة" ثم "إضافة للشاشة الرئيسية"</div>
+  </div>
+  <button class="ib-btn" id="ib-install-btn" onclick="installApp()">تحميل</button>
+  <i class="ti ti-x ib-close" onclick="closeInstall()"></i>
+</div>
+
+<!-- TOP NAV -->
+<div class="top-nav">
+  <div class="app-logo">لمسة<small id="logo-sub">للجمال والعناية</small></div>
+  <div class="top-actions">
+    <button class="top-btn" onclick="openLangModal()"><i class="ti ti-world"></i></button>
+    <button class="top-btn" onclick="openCartPage()">
+      <i class="ti ti-shopping-cart"></i>
+      <span class="badge" id="top-badge">0</span>
+    </button>
+    <button class="top-btn gold" onclick="openCartPage()"><i class="ti ti-shopping-bag"></i></button>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <div class="search-inner">
+    <input type="text" id="search-inp" placeholder="ابحثي عن منتج..." oninput="handleSearch(this.value)">
+    <i class="ti ti-search s-icon"></i>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="main-scroll">
+
+  <!-- HERO -->
+  <div class="hero-strip">
+    <div class="hero-tag">👑 <span id="hero-tag">الأكثر طلباً في الأردن</span></div>
+    <h1 id="hero-h1">جمالك الحقيقي <span>يبدأ هنا</span></h1>
+    <p id="hero-sub">أفضل منتجات الجمال بأسعار خاصة للأردن</p>
+    <button class="hero-btn" onclick="document.getElementById('prods-section').scrollIntoView({behavior:'smooth'})">
+      <i class="ti ti-shopping-bag"></i> <span id="hero-btn">تسوقي الآن</span>
+    </button>
+  </div>
+
+  <!-- OFFER BANNER -->
+  <div class="offer-banner">
+    <div class="ob-txt">
+      <h3 id="ob-h">خصم 30% اليوم 🌟</h3>
+      <p id="ob-p">على منتجات العناية بالبشرة</p>
+      <button class="ob-btn" onclick="filterCat('skincare')"><i class="ti ti-bolt"></i> <span id="ob-btn">استفيدي الآن</span></button>
+      <div class="countdown-s">
+        <div class="cd"><span id="cd-h">08</span><small id="cd-hl">ساعة</small></div>
+        <div class="cd"><span id="cd-m">34</span><small id="cd-ml">دقيقة</small></div>
+        <div class="cd"><span id="cd-s">12</span><small id="cd-sl">ثانية</small></div>
       </div>
     </div>
-  </body>
+    <div class="ob-emoji">💝</div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div style="margin-bottom:24px">
+    <div class="sec-hd" style="margin-bottom:14px">
+      <div><h2 id="cats-title">الفئات</h2><div class="sec-line"></div></div>
+    </div>
+    <div class="cats-scroll" id="cats-scroll">
+      <div class="cat-pill act" onclick="filterCat('all')"><div class="cat-circle">🌟</div><div class="cat-label" id="cn-all">الكل</div></div>
+      <div class="cat-pill" onclick="filterCat('beauty')"><div class="cat-circle">💄</div><div class="cat-label" id="cn-beauty">الجمال</div></div>
+      <div class="cat-pill" onclick="filterCat('skincare')"><div class="cat-circle">🧴</div><div class="cat-label" id="cn-skin">البشرة</div></div>
+      <div class="cat-pill" onclick="filterCat('hair')"><div class="cat-circle">💇‍♀️</div><div class="cat-label" id="cn-hair">الشعر</div></div>
+      <div class="cat-pill" onclick="filterCat('perfume')"><div class="cat-circle">🌸</div><div class="cat-label" id="cn-perf">العطور</div></div>
+      <div class="cat-pill" onclick="filterCat('body')"><div class="cat-circle">🛁</div><div class="cat-label" id="cn-body">الجسم</div></div>
+      <div class="cat-pill" onclick="filterCat('trending')"><div class="cat-circle">🔥</div><div class="cat-label" id="cn-trend">التريند</div></div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div id="prods-section" style="margin-bottom:24px">
+    <div class="sec-hd">
+      <div><h2 id="prods-title">المنتجات <span>المميزة</span></h2><div class="sec-line"></div></div>
+      <a href="#" id="see-all">عرض الكل</a>
+    </div>
+    <div class="prods-grid" id="prods-grid"></div>
+  </div>
+
+</div><!-- END MAIN -->
+
+<!-- CART PAGE (slides in) -->
+<div class="cart-page" id="cart-page">
+  <div class="cart-page-hd">
+    <button class="back-btn" onclick="closeCartPage()"><i class="ti ti-arrow-right"></i></button>
+    <div class="cart-page-title" id="cart-title">سلة التسوق</div>
+  </div>
+  <div class="cart-scroll" id="cart-scroll"></div>
+  <div class="cart-footer-m" id="cart-footer"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bn-item act" onclick="goHome(this)"><i class="ti ti-home bn-icon"></i><div class="bn-label" id="bn-home">الرئيسية</div></div>
+  <div class="bn-item" onclick="filterCat('trending');goSection(this)"><i class="ti ti-trending-up bn-icon"></i><div class="bn-label" id="bn-trend">التريند</div></div>
+  <div class="bn-item" onclick="filterCat('beauty');goSection(this)"><i class="ti ti-sparkles bn-icon"></i><div class="bn-label" id="bn-beauty">الجمال</div></div>
+  <div class="bn-item" onclick="openCartPage();goSection(this)">
+    <i class="ti ti-shopping-cart bn-icon"></i>
+    <div class="bn-label" id="bn-cart">سلتي</div>
+    <span class="bn-badge" id="bn-badge">0</span>
+  </div>
+  <div class="bn-item" onclick="openLangModal();goSection(this)"><i class="ti ti-settings bn-icon"></i><div class="bn-label" id="bn-settings">الإعدادات</div></div>
+</div>
+
+<!-- LANG/CURR MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">الإعدادات</div>
+
+    <div style="font-size:12px;color:var(--g);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px" id="lang-section-title">اللغة</div>
+    <div class="modal-option" onclick="setLang('ar')">
+      <span class="modal-option-label">🇯🇴 العربية</span>
+      <div class="modal-option-check" id="chk-ar"><i class="ti ti-check" style="font-size:12px"></i></div>
+    </div>
+    <div class="modal-option" onclick="setLang('en')">
+      <span class="modal-option-label">🇺🇸 English</span>
+      <div class="modal-option-check" id="chk-en" style="border-color:#444;color:transparent"></div>
+    </div>
+
+    <div style="font-size:12px;color:var(--g);margin:16px 0 10px;font-weight:700;text-transform:uppercase;letter-spacing:1px" id="curr-section-title">العملة</div>
+    <div class="modal-option" onclick="setCurr('JD')">
+      <span class="modal-option-label">🇯🇴 دينار أردني (د.أ)</span>
+      <div class="modal-option-check" id="chk-jd"><i class="ti ti-check" style="font-size:12px"></i></div>
+    </div>
+    <div class="modal-option" onclick="setCurr('USD')">
+      <span class="modal-option-label">🇺🇸 US Dollar ($)</span>
+      <div class="modal-option-check" id="chk-usd" style="border-color:#444;color:transparent"></div>
+    </div>
+
+    <div style="margin-top:16px;font-size:12px;color:var(--g);text-align:center" id="app-version">لمسة للجمال والعناية v1.0 — الأردن</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const PRODS=[
+  {id:1,nameAr:'كريم لوريال باريس المرطب',nameEn:"L'Oréal Moisturizer",brandAr:'لوريال',brandEn:"L'Oréal",price:8.5,oldPrice:12,emoji:'🧴',cat:'skincare',isNew:false,hot:true,rating:4.8},
+  {id:2,nameAr:'سيرم فيتامين C نيفيا',nameEn:'Nivea Vitamin C Serum',brandAr:'نيفيا',brandEn:'Nivea',price:6,oldPrice:9,emoji:'✨',cat:'skincare',isNew:true,hot:false,rating:4.6},
+  {id:3,nameAr:'شامبو بانتين للتقوية',nameEn:'Pantene Shampoo',brandAr:'بانتين',brandEn:'Pantene',price:4.5,oldPrice:null,emoji:'💧',cat:'hair',isNew:false,hot:false,rating:4.7},
+  {id:4,nameAr:'عطر شانيل N°5',nameEn:'Chanel N°5 Perfume',brandAr:'شانيل',brandEn:'Chanel',price:95,oldPrice:130,emoji:'🌸',cat:'perfume',isNew:false,hot:true,rating:5.0},
+  {id:5,nameAr:'أحمر شفاه ريميل',nameEn:'Rimmel Lipstick',brandAr:'ريميل',brandEn:'Rimmel',price:5.5,oldPrice:8,emoji:'💄',cat:'beauty',isNew:true,hot:true,rating:4.5},
+  {id:6,nameAr:'زيت أرغان للشعر',nameEn:'Argan Hair Oil',brandAr:'موروكان أويل',brandEn:'MoroccanOil',price:18,oldPrice:25,emoji:'💆‍♀️',cat:'hair',isNew:false,hot:false,rating:4.9},
+  {id:7,nameAr:'ماسك الطين للبشرة',nameEn:'Clay Face Mask',brandAr:'ذا أوردينري',brandEn:'The Ordinary',price:12,oldPrice:null,emoji:'🫧',cat:'skincare',isNew:true,hot:false,rating:4.4},
+  {id:8,nameAr:'عطر ديور ساوفاج',nameEn:'Dior Sauvage',brandAr:'ديور',brandEn:'Dior',price:48,oldPrice:68,emoji:'🌺',cat:'perfume',isNew:true,hot:true,rating:4.9},
+  {id:9,nameAr:'أحمر خدود ميبيلين',nameEn:'Maybelline Blush',brandAr:'ميبيلين',brandEn:'Maybelline',price:7,oldPrice:10,emoji:'🌹',cat:'beauty',isNew:false,hot:true,rating:4.6},
+  {id:10,nameAr:'كريم ترطيب نيفيا',nameEn:'Nivea Body Cream',brandAr:'نيفيا',brandEn:'Nivea',price:5.5,oldPrice:8,emoji:'🛁',cat:'body',isNew:false,hot:false,rating:4.5},
+  {id:11,nameAr:'مجموعة العناية التريند',nameEn:'Trending Skincare Set',brandAr:'سيتافيل',brandEn:'Cetaphil',price:28,oldPrice:40,emoji:'🌟',cat:'trending',isNew:true,hot:true,rating:4.9},
+  {id:12,nameAr:'مسكارا ماكس فاكتور',nameEn:'Max Factor Mascara',brandAr:'ماكس فاكتور',brandEn:'Max Factor',price:9,oldPrice:13,emoji:'👁️',cat:'beauty',isNew:false,hot:true,rating:4.6},
+];
+
+let cart=[],curProds=[...PRODS],curCat='all',isAr=true,curr='JD';
+const JD_USD=1.41;
+const nextId=[1050];
+
+const T={
+  ar:{search:'ابحثي عن منتج...','logo-sub':'للجمال والعناية','hero-tag':'الأكثر طلباً في الأردن',
+    'hero-h1':'جمالك الحقيقي <span>يبدأ هنا</span>','hero-sub':'أفضل منتجات الجمال بأسعار خاصة للأردن','hero-btn':'تسوقي الآن',
+    'ob-h':'خصم 30% اليوم 🌟','ob-p':'على منتجات العناية بالبشرة','ob-btn':'استفيدي الآن',
+    'cd-hl':'ساعة','cd-ml':'دقيقة','cd-sl':'ثانية',
+    'cats-title':'الفئات','cn-all':'الكل','cn-beauty':'الجمال','cn-skin':'البشرة','cn-hair':'الشعر','cn-perf':'العطور','cn-body':'الجسم','cn-trend':'التريند',
+    'prods-title':'المنتجات <span>المميزة</span>','see-all':'عرض الكل',
+    'bn-home':'الرئيسية','bn-trend':'التريند','bn-beauty':'الجمال','bn-cart':'سلتي','bn-settings':'الإعدادات',
+    'cart-title':'سلة التسوق','cart-empty':'سلتك فارغة','cart-empty-sub':'اضغطي لمتابعة التسوق',
+    'subtotal':'المجموع','shipping':'الشحن','free':'مجاني','total':'الإجمالي','checkout':'إتمام الشراء',
+    add:'أضف للسلة',sym:'د.أ',
+    'modal-title':'الإعدادات','lang-section-title':'اللغة','curr-section-title':'العملة',
+    'ib-title':'حمّلي التطبيق','ib-sub':'اضغطي على مشاركة ← إضافة للشاشة الرئيسية','ib-install-btn':'تحميل',
+  },
+  en:{search:'Search for a product...','logo-sub':'Beauty & Care',
+    'hero-tag':'Most Requested in Jordan','hero-h1':'Your True Beauty <span>Starts Here</span>',
+    'hero-sub':'Top beauty products at special Jordan prices','hero-btn':'Shop Now',
+    'ob-h':'30% Off Today 🌟','ob-p':'On all skincare products','ob-btn':'Grab It Now',
+    'cd-hl':'Hours','cd-ml':'Mins','cd-sl':'Secs',
+    'cats-title':'Categories','cn-all':'All','cn-beauty':'Beauty','cn-skin':'Skincare','cn-hair':'Hair','cn-perf':'Perfumes','cn-body':'Body','cn-trend':'Trending',
+    'prods-title':'<span>Featured</span> Products','see-all':'View All',
+    'bn-home':'Home','bn-trend':'Trending','bn-beauty':'Beauty','bn-cart':'Cart','bn-settings':'Settings',
+    'cart-title':'Shopping Cart','cart-empty':'Your cart is empty','cart-empty-sub':'Tap to continue shopping',
+    'subtotal':'Subtotal','shipping':'Shipping','free':'Free','total':'Total','checkout':'Checkout',
+    add:'Add to Cart',sym:'JD',
+    'modal-title':'Settings','lang-section-title':'Language','curr-section-title':'Currency',
+    'ib-title':'Install the App','ib-sub':'Tap Share → Add to Home Screen','ib-install-btn':'Install',
+  }
+};
+function t(k){return (isAr?T.ar:T.en)[k]||k}
+function fmt(jd){return curr==='JD'?jd.toFixed(2)+' '+t('sym'):'$'+(jd*JD_USD).toFixed(2)}
+
+function applyLang(){
+  document.getElementById('root').lang=isAr?'ar':'en';
+  document.getElementById('root').dir=isAr?'rtl':'ltr';
+  document.body.classList.toggle('ltr',!isAr);
+  document.getElementById('search-inp').placeholder=t('search');
+  const ids=['logo-sub','hero-tag','hero-sub','hero-btn','ob-h','ob-p','ob-btn','cd-hl','cd-ml','cd-sl','cats-title','cn-all','cn-beauty','cn-skin','cn-hair','cn-perf','cn-body','cn-trend','see-all','bn-home','bn-trend','bn-beauty','bn-cart','bn-settings','cart-title','modal-title','lang-section-title','curr-section-title','ib-title','ib-sub','ib-install-btn'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
+  ['hero-h1','prods-title'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=t(id)});
+  document.getElementById('chk-ar').style.borderColor=isAr?'var(--gold)':'#444';
+  document.getElementById('chk-ar').style.color=isAr?'var(--gold)':'transparent';
+  document.getElementById('chk-en').style.borderColor=!isAr?'var(--gold)':'#444';
+  document.getElementById('chk-en').style.color=!isAr?'var(--gold)':'transparent';
+  renderProds();renderCart();
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function filterCat(cat){
+  curCat=cat;
+  curProds=cat==='all'?[...PRODS]:PRODS.filter(p=>p.cat===cat);
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('act'));
+  const catMap={all:0,beauty:1,skincare:2,hair:3,perfume:4,body:5,trending:6};
+  const pills=document.querySelectorAll('.cat-pill');
+  if(pills[catMap[cat]])pills[catMap[cat]].classList.add('act');
+  renderProds();
+  document.getElementById('prods-section').scrollIntoView({behavior:'smooth'});
+}
+
+function handleSearch(q){
+  if(!q.trim()){curProds=curCat==='all'?[...PRODS]:PRODS.filter(p=>p.cat===curCat);renderProds();return}
+  curProds=PRODS.filter(p=>(isAr?p.nameAr:p.nameEn).toLowerCase().includes(q.toLowerCase())||(isAr?p.brandAr:p.brandEn).toLowerCase().includes(q.toLowerCase()));
+  renderProds();
+}
+
+function stars(r){return '★'.repeat(Math.floor(r))+'☆'.repeat(5-Math.floor(r))}
+function renderProds(){
+  document.getElementById('prods-grid').innerHTML=curProds.map((p,i)=>{
+    const disc=p.oldPrice?Math.round((1-p.price/p.oldPrice)*100):0;
+    const nm=isAr?p.nameAr:p.nameEn,br=isAr?p.brandAr:p.brandEn;
+    return`<div class="prod-card" style="animation:fadeUp .25s ease ${Math.min(i,6)*.05}s both">
+      <div class="prod-img">${p.emoji}
+        <div class="prod-badges-m">
+          ${disc?`<span class="badge-s bs-sale">-${disc}%</span>`:''}
+          ${p.isNew?`<span class="badge-s bs-new">جديد</span>`:''}
+          ${p.hot?`<span class="badge-s bs-hot">🔥</span>`:''}
+        </div>
+      </div>
+      <div class="prod-info-m">
+        <div class="prod-brand-m">${br}</div>
+        <div class="prod-name-m">${nm}</div>
+        <div class="prod-price-m">${fmt(p.price)}</div>
+        ${p.oldPrice?`<div class="prod-old-m">${fmt(p.oldPrice)}</div>`:'<div style="margin-bottom:8px"></div>'}
+        <button class="prod-add-m" onclick="addCart(${p.id})"><i class="ti ti-plus" style="font-size:13px"></i> ${t('add')}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CART ─────────────────────────────────────────────────────────────────────
+function addCart(id){
+  const p=PRODS.find(x=>x.id===id);
+  const ex=cart.find(x=>x.id===id);
+  if(ex)ex.qty++;else cart.push({...p,qty:1});
+  updateBadges();renderCart();
+  toast(isAr?`تمت إضافة "${p.nameAr}" ✓`:`"${p.nameEn}" added ✓`);
+}
+function chgQty(id,d){
+  const it=cart.find(x=>x.id===id);if(!it)return;
+  it.qty+=d;if(it.qty<=0)cart=cart.filter(x=>x.id!==id);
+  updateBadges();renderCart();
+}
+function rmItem(id){
+  cart=cart.filter(x=>x.id!==id);updateBadges();renderCart();
+}
+function updateBadges(){
+  const tot=cart.reduce((s,x)=>s+x.qty,0);
+  ['top-badge','bn-badge'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.textContent=tot;el.classList.toggle('show',tot>0);
+  });
+}
+function renderCart(){
+  const scroll=document.getElementById('cart-scroll');
+  const ft=document.getElementById('cart-footer');
+  if(!cart.length){
+    scroll.innerHTML=`<div class="cart-empty-m"><i class="ti ti-shopping-cart-off"></i><p>${t('cart-empty')}</p><button onclick="closeCartPage();goHome(null)" style="background:var(--gold);color:var(--black);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;border:none">${t('hero-btn')}</button></div>`;
+    ft.innerHTML='';return;
+  }
+  scroll.innerHTML=cart.map(it=>`<div class="cart-item-m">
+    <div class="ci-img">${it.emoji}</div>
+    <div class="ci-dets">
+      <div class="ci-b">${isAr?it.brandAr:it.brandEn}</div>
+      <div class="ci-n">${isAr?it.nameAr:it.nameEn}</div>
+      <div class="ci-p">${fmt(it.price*it.qty)}</div>
+      <div class="ci-controls">
+        <div class="qb" onclick="chgQty(${it.id},-1)">−</div>
+        <span style="font-size:14px;font-weight:700;min-width:22px;text-align:center">${it.qty}</span>
+        <div class="qb" onclick="chgQty(${it.id},1)">+</div>
+        <i class="ti ti-trash rm-m" onclick="rmItem(${it.id})"></i>
+      </div>
+    </div>
+  </div>`).join('');
+  const sub=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  const ship=sub>=20?0:2.5;
+  const tot=sub+ship;
+  ft.innerHTML=`
+    <div class="cart-row-m"><span>${t('subtotal')}</span><span>${fmt(sub)}</span></div>
+    <div class="cart-row-m"><span>${t('shipping')}</span><span style="color:${ship===0?'var(--green)':'inherit'}">${ship===0?t('free'):fmt(ship)}</span></div>
+    <div class="cart-total-m"><span>${t('total')}</span><span>${fmt(tot)}</span></div>
+    <button class="checkout-m" onclick="checkout()"><i class="ti ti-credit-card"></i> ${t('checkout')}</button>`;
+}
+function checkout(){
+  cart=[];updateBadges();renderCart();closeCartPage();
+  toast(isAr?'تم إرسال طلبك بنجاح! 🎉':'Order placed successfully! 🎉');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function openCartPage(){
+  document.getElementById('cart-page').classList.add('open');
+  renderCart();
+}
+function closeCartPage(){document.getElementById('cart-page').classList.remove('open')}
+function goHome(el){
+  if(el){document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('act'));el.classList.add('act')}
+  document.getElementById('main-scroll').scrollTo({top:0,behavior:'smooth'});
+}
+function goSection(el){
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('act'));
+  el.classList.add('act');
+}
+
+// ── LANG / CURR MODAL ─────────────────────────────────────────────────────────
+function openLangModal(){document.getElementById('modal-overlay').classList.add('open')}
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))document.getElementById('modal-overlay').classList.remove('open')}
+function setLang(l){isAr=l==='ar';applyLang()}
+function setCurr(c){
+  curr=c;
+  document.getElementById('chk-jd').style.borderColor=c==='JD'?'var(--gold)':'#444';
+  document.getElementById('chk-jd').style.color=c==='JD'?'var(--gold)':'transparent';
+  document.getElementById('chk-usd').style.borderColor=c==='USD'?'var(--gold)':'#444';
+  document.getElementById('chk-usd').style.color=c==='USD'?'var(--gold)':'transparent';
+  renderProds();renderCart();
+}
+
+// ── COUNTDOWN ─────────────────────────────────────────────────────────────────
+let secs=8*3600+34*60+12;
+setInterval(()=>{
+  secs--;if(secs<0)secs=86400;
+  const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  document.getElementById('cd-h').textContent=String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent=String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent=String(s).padStart(2,'0');
+},1000);
+
+// ── INSTALL PROMPT ────────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('install-banner').style.display='flex';
+});
+function installApp(){
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;closeInstall()})}
+  else{document.getElementById('modal-overlay').classList.add('open')}
+}
+function closeInstall(){document.getElementById('install-banner').style.display='none'}
+// Show for iOS users (Safari detection)
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone=window.matchMedia('(display-mode:standalone)').matches;
+if(isIOS&&!isStandalone){setTimeout(()=>{document.getElementById('install-banner').style.display='flex'},2000)}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  el.classList.add('show');clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderProds();
+</script>
+</body>
 </html>
