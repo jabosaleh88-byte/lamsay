@@ -5,7 +5,7 @@
 /* lamsay-login-fix-v3 */
 window.doLogin=function(){var i=document.getElementById('login-pass'),e=document.getElementById('login-err'),p=localStorage.getItem('lamsay_admin_pass')||'lamsay2025';if(i&&i.value===p){sessionStorage.setItem('lamsay_logged','yes');var s=document.getElementById('login-screen');if(s)s.style.display='none';if(e)e.style.display='none';}else{if(e){e.style.display='block';e.textContent='❌ كلمة المرور غير صحيحة';}if(i){i.value='';i.focus();}}};
 window.doLogout=function(){sessionStorage.removeItem('lamsay_logged');location.reload();};
-document.addEventListener('DOMContentLoaded',function(){var b=document.queryhSelector('#login-screen button');if(sessionStorage.getItem('lamsay_logged')==='yes'){var ls=document.getElementById('login-screen');if(ls)ls.style.display='none';}if(b)b.onclick=window.doLogin;var i=document.getElementById('login-pass');if(i)i.onkeydown=function(e){if(e.key==='Enter')window.doLogin();};});
+document.addEventListener('DOMContentLoaded',function(){var b=document.querySelector('#login-screen button');if(sessionStorage.getItem('lamsay_logged')==='yes'){var ls=document.getElementById('login-screen');if(ls)ls.style.display='none';}if(b)b.onclick=window.doLogin;var i=document.getElementById('login-pass');if(i)i.onkeydown=function(e){if(e.key==='Enter')window.doLogin();};});
 </script>
 <meta charset="UTF-8">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
