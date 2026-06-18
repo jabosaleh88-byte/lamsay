@@ -953,8 +953,8 @@ function renderCustomers() {
 
   const map={};
   ORDERS.forEach(o=>{ const k=o.phone||o.name; if(!k)return; if(!map[k])map[k]={name:o.name,phone:o.phone,gov:o.gov,cnt:0,total:0,last:o.date}; map[k].cnt++; map[k].total+=o.total||0; map[k].last=o.date; });
-  const list=Object.values(map).sort((a,b)=>b.total-a.total);
-var list = custSource;
+  let list=Object.values(map).sort((a,b)=>b.total-a.total);
+list = custSource;
   document.getElementById('cust-tbody').innerHTML = list.length ? list.map(c=>{
     const wp=(c.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'962');
     return `<tr><td style="font-weight:700">${c.name||'—'}</td><td style="color:var(--gl)">${c.phone||'—'}</td><td style="color:var(--gl)">${c.gov||'—'}</td><td style="color:var(--gold);font-weight:700">${c.cnt}</td><td style="color:var(--green);font-weight:700">${c.total.toFixed(2)} د.أ</td><td style="color:var(--gl);font-size:12px">${c.last||'—'}</td><td><a href="https://wa.me/${wp}?text=${encodeURIComponent('مرحباً '+c.name)}" target="_blank"><div class="a-btn" style="color:#25D366;border-color:rgba(37,211,102,.3)"><i class="ti ti-brand-whatsapp"></i></div></a></td></tr>`;
