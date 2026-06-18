@@ -2,6 +2,20 @@
 <html lang="ar" dir="rtl" id="root">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="تطبيق لمسة — تسوق منتجات الجمال، العطور والأزياء في الأردن بأسعار مميزة. شحن لجميع المحافظات بـ 3 دنانير.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://lamsay.com/app.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lamsay.com/app.html">
+<meta property="og:title" content="لمسة — تطبيق الجمال في الأردن">
+<meta property="og:description" content="تسوق منتجات الجمال، العطور والأزياء بأسعار مميزة. شحن لجميع محافظات الأردن بـ 3 دنانير">
+<meta property="og:image" content="https://lamsay.com/og-image.jpg">
+<meta property="og:locale" content="ar_JO">
+<meta property="og:site_name" content="لمسة — Lamsay">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="لمسة — تطبيق الجمال في الأردن">
+<meta name="twitter:description" content="تسوق منتجات الجمال بأسعار مميزة — شحن لجميع محافظات الأردن">
+<meta name="twitter:image" content="https://lamsay.com/og-image.jpg">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -13,6 +27,8 @@
 <meta name="theme-color" content="#C9A84C">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23C9A84C'/><text x='50' y='68' font-size='52' text-anchor='middle'>💄</text></svg>">
 <title>لمسة — تطبيق الجمال</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -230,6 +246,13 @@ input,select,textarea{font-family:inherit}
 .ib-btn{background:var(--gold);color:var(--black);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;flex-shrink:0;cursor:pointer;border:none}
 .ib-close{font-size:18px;color:var(--g);margin-right:4px;cursor:pointer}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.skeleton-card{background:#1a1a1a;border-radius:14px;overflow:hidden;}
+.skeleton-img{height:180px;background:linear-gradient(90deg,#1a1a1a 25%,#252525 50%,#1a1a1a 75%);background-size:200% 100%;animation:sk-shimmer 1.5s infinite;}
+.skeleton-text{height:14px;background:#252525;border-radius:6px;margin:10px;animation:sk-shimmer 1.5s infinite;}
+.skeleton-text.short{width:55%;}
+.skeleton-btn{height:36px;background:#252525;border-radius:8px;margin:10px;animation:sk-shimmer 1.5s infinite;}
+@keyframes sk-shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 </style>
 </head>
 <body>
@@ -301,7 +324,8 @@ input,select,textarea{font-family:inherit}
   <!-- PRODUCTS — Feature 6: lazy loading, pagination -->
   <div id="prods-section" style="margin-bottom:24px">
     <div class="sec-hd"><div><h2>المنتجات <span>المميزة</span></h2><div class="sec-line"></div></div><span style="font-size:12px;color:var(--gold)" id="prods-count"></span></div>
-    <div class="prods-grid" id="prods-grid"></div>
+    <div id="m-skeleton-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:12px 0;"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div></div>
+<div class="prods-grid" id="prods-grid"></div>
     <div style="text-align:center;margin:10px 16px 0">
       <button id="load-more-btn" onclick="loadMoreProducts()" style="display:none;width:100%;background:var(--dark2);border:1px solid #2e2e2e;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:var(--gl);cursor:pointer">تحميل المزيد</button>
     </div>
@@ -500,7 +524,7 @@ const db   = firebase.firestore();
 const auth = firebase.auth();
 
 // Enable offline persistence (Feature 6)
-db.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn('Persistence:', e.code));
+try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
 
 // --- Global State ---
 let cart       = JSON.parse(localStorage.getItem('m_cart') || '[]');
@@ -814,6 +838,8 @@ async function loadProductsPage(reset=false){
   } catch(e){ console.warn('loadProductsPage:', e); if(loadBtn) loadBtn.disabled=false; }
 }
 function renderProds(docs, reset=false){
+  var msk2=document.getElementById('m-skeleton-grid');if(msk2)msk2.style.display='none';
+
   const grid = document.getElementById('prods-grid');
   if(!grid) return;
   const html = docs.map(doc=>{
@@ -1097,7 +1123,7 @@ async function init(){
   if(gov) gov.addEventListener('change', updateShipping_m);
   // Search
   const si = document.getElementById('m-search-inp');
-  if(si) si.addEventListener('input', doSearch_m);
+  if(si){ var _dst2; si.addEventListener('input',function(){ clearTimeout(_dst2); _dst2=setTimeout(doSearch_m,300); }); }
   // Keyboard close sheets on ESC
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeCartToast(); closeCartPage(); closeCheckoutSheet(); closeProdSheet(); closeAuthSheet(); } });
 }
