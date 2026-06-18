@@ -29,6 +29,7 @@ function checkAdminAuth(){
     var ov=document.getElementById('admin-auth-overlay');
     if(user && ADMIN_EMAILS.includes(user.email)){
       if(mc)mc.style.display='flex';
+      if(mc)mc.style.flex='1';
       if(ov)ov.style.display='none';
       var el=document.getElementById('admin-logged-name');
       if(el)el.textContent=user.displayName||user.email;
