@@ -1124,7 +1124,9 @@ function submitOrder() {
   msg += `\n${'─'.repeat(30)}\n`;
   msg += `⏰ ${new Date().toLocaleString('ar-JO')}`;
 
-  const waUrl = `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  // تنظيف رقم الواتساب من أي رموز غير رقمية وبناء الرابط
+  const waPhone = CONFIG.WHATSAPP.replace(/[^0-9]/g, '');
+  const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
 
   // حفظ الطلب
   const order = {
@@ -1146,6 +1148,16 @@ function submitOrder() {
   // Success modal
   document.getElementById('success-msg').textContent =
     `شكراً ${name}! تم استلام طلبك بقيمة ${fmt(total)}. سيتم توصيله لـ ${city}, ${gov} خلال ${rate.days}.`;
+  // فتح الواتساب مباشرة عند إرسال الطلب (تجاوز حجب النوافذ المنبثقة)
+  const waLink = document.createElement('a');
+  waLink.href = waUrl;
+  waLink.target = '_blank';
+  waLink.rel = 'noopener noreferrer';
+  document.body.appendChild(waLink);
+  waLink.click();
+  document.body.removeChild(waLink);
+  
+  // تعيين زر الواتساب في modal النجاح أيضاً
   document.getElementById('success-wa-btn').onclick = () => window.open(waUrl, '_blank');
   document.getElementById('success-modal').classList.add('open');
 
