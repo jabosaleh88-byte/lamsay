@@ -1583,6 +1583,27 @@ async function submitOrder() {
   // Save to Firestore
   if (_fbReady) {
     _db.collection('orders').add({...order, createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
+          // Auto-save customer to users collection
+          if(_fbReady && _db){
+            try {
+              var custPh = document.getElementById('c-phone') ? document.getElementById('c-phone').value.trim() : '';
+              var custNm = document.getElementById('c-name')  ? document.getElementById('c-name').value.trim()  : '';
+              var custGv = document.getElementById('c-gov')   ? document.getElementById('c-gov').value   : '';
+              var custCt = document.getElementById('c-city')  ? document.getElementById('c-city').value.trim()  : '';
+              var custAd = document.getElementById('c-address')? document.getElementById('c-address').value.trim() : '';
+              if(custPh){
+                var cDocId = custPh.replace(/[^0-9]/g,'');
+                var cRef = _db.collection('users').doc(cDocId);
+                var cSnap = await cRef.get();
+                if(!cSnap.exists){
+                  await cRef.set({ uid: cDocId, display_name: custNm, email: '', phone_number: custPh, default_province: custGv, default_address: custAd+(custCt?', '+custCt:''), created_at: firebase.firestore.FieldValue.serverTimestamp(), saved_items: [], orders_count: 1, source: 'guest_order' });
+                } else {
+                  await cRef.update({ orders_count: firebase.firestore.FieldValue.increment(1), last_order_at: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+              }
+            } catch(cErr){ console.warn('Customer save:', cErr); }
+          }
+
     saveCustomerData(order);
     if (activeCoupon) _db.collection('coupons').where('code','==',activeCoupon.code).get().then(s=>s.docs[0]?.ref.update({usedCount:firebase.firestore.FieldValue.increment(1)})).catch(()=>{});
   }
