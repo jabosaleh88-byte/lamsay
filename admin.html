@@ -652,6 +652,9 @@ function startListeners() {
   }, err => { toast('⚠️ خطأ في تحميل المنتجات'); console.error(err); });
 
   db.collection('orders').orderBy('createdAt','desc').onSnapshot(snap => {
+  window._ordersData = snap.docs.map(function(d){ var data = d.data(); data.id = d.id; return data; });
+  window._ordersData.sort(function(a,b){ var ta = (a.createdAt && a.createdAt.seconds) ? a.createdAt.seconds : 0; var tb = (b.createdAt && b.createdAt.seconds) ? b.createdAt.seconds : 0; return tb - ta; });
+
     ORDERS = snap.docs.map(d => ({...d.data(), _id: d.id}));
     const pend = ORDERS.filter(o => o.status === 'new' || o.status === 'pending').length;
     document.getElementById('sb-oc').textContent = pend || '';
@@ -701,6 +704,16 @@ function renderOverview() {
   const vals=[42,68,55,90,73,110,88]; const mx=Math.max(...vals);
   document.getElementById('bar-chart').innerHTML = vals.map((v,i)=>`<div class="bar-wrap"><div class="bar-val">${v}</div><div class="bar" style="height:${Math.round(v/mx*110)}px"></div><div class="bar-lbl">${days[i]}</div></div>`).join('');
   const cc={};PRODUCTS.forEach(p=>{cc[p.cat]=(cc[p.cat]||0)+1;});
+
+  // Real-time customers listener
+  db.collection('users').orderBy('created_at','desc').onSnapshot(function(snap){
+    window._customersData = snap.docs.map(function(d){ var data = d.data(); data.id = d.id; return data; });
+    var custBadge = document.getElementById('sb-cc');
+    if(custBadge) custBadge.textContent = window._customersData.length;
+    var custTab = document.getElementById('tab-customers');
+    if(custTab && custTab.classList.contains('active')) renderCustomers();
+  }, function(err){ console.warn('Users listener:', err); });
+
   document.getElementById('cat-stats').innerHTML = PRODUCTS.length ? Object.entries(cc).map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="flex:1;color:var(--gl)">${CAT_AR[k]||k}</div><div style="width:80px;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden"><div style="width:${Math.round(v/PRODUCTS.length*100)}%;height:100%;background:var(--gold)"></div></div><div style="color:var(--gold);font-weight:700;min-width:20px">${v}</div></div>`).join('') : '<div style="color:var(--g);font-size:13px">لا توجد منتجات</div>';
   document.getElementById('ov-orders').innerHTML = ORDERS.slice(0,6).map(o=>`<tr><td style="font-weight:700;color:var(--gold)">${o.orderId||o._id||'—'}</td><td>${o.name||'—'}</td><td style="font-weight:700">${(o.total||0).toFixed(2)} د.أ</td><td style="color:var(--gl)">${o.gov||'—'}</td><td>${stBadge(o.status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--g);padding:24px">لا توجد طلبات</td></tr>';
 }
@@ -883,6 +896,9 @@ function getOrds() {
   });
 }
 function renderOrders() {
+  var orders = (window._ordersData || []);
+  var filteredOrders = orders;
+
   const data=getOrds();
   if (!data.length) { document.getElementById('orders-tbody').innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-shopping-bag-x"></i><h3>لا توجد طلبات</h3></div></td></tr>`; return; }
   document.getElementById('orders-tbody').innerHTML = data.map((o,i)=>{
@@ -925,9 +941,20 @@ async function updOrdSt(id, status) {
 // CUSTOMERS
 // ════════════════════════════════════════════════
 function renderCustomers() {
+  var custSource = (window._customersData && window._customersData.length > 0) 
+    ? window._customersData 
+    : (window._ordersData || []).reduce(function(acc, ord){
+        var phone = ord.phone || ord.customer_phone || '';
+        if(phone && !acc.find(function(c){ return c.phone === phone; })){
+          acc.push({ display_name: ord.customer_name || ord.name || 'زائر', phone: phone, email: ord.email || '', default_province: ord.province || ord.governorate || '', created_at: ord.createdAt || null, ordersCount: (window._ordersData||[]).filter(function(o){ return (o.phone||o.customer_phone||'')=== phone; }).length, id: phone });
+        }
+        return acc;
+      }, []);
+
   const map={};
   ORDERS.forEach(o=>{ const k=o.phone||o.name; if(!k)return; if(!map[k])map[k]={name:o.name,phone:o.phone,gov:o.gov,cnt:0,total:0,last:o.date}; map[k].cnt++; map[k].total+=o.total||0; map[k].last=o.date; });
   const list=Object.values(map).sort((a,b)=>b.total-a.total);
+var list = custSource;
   document.getElementById('cust-tbody').innerHTML = list.length ? list.map(c=>{
     const wp=(c.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'962');
     return `<tr><td style="font-weight:700">${c.name||'—'}</td><td style="color:var(--gl)">${c.phone||'—'}</td><td style="color:var(--gl)">${c.gov||'—'}</td><td style="color:var(--gold);font-weight:700">${c.cnt}</td><td style="color:var(--green);font-weight:700">${c.total.toFixed(2)} د.أ</td><td style="color:var(--gl);font-size:12px">${c.last||'—'}</td><td><a href="https://wa.me/${wp}?text=${encodeURIComponent('مرحباً '+c.name)}" target="_blank"><div class="a-btn" style="color:#25D366;border-color:rgba(37,211,102,.3)"><i class="ti ti-brand-whatsapp"></i></div></a></td></tr>`;
