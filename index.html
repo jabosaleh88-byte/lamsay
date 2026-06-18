@@ -881,7 +881,7 @@ function renderProds() {
     const br = isAr ? p.brandAr : p.brandEn;
     const inWish = wishlist.includes(p.id);
     return `<div class="prod-card" style="animation:fadeUp .3s ease ${Math.min(i,.8)*.06}s both">
-      <div class="prod-img" onclick="openProdModal(${p.id})">
+      <div class="prod-img" onclick="openProdModal('${p.id}')">
         ${p.img ? `<img src="${p.img}" alt="${nm}" loading="lazy">` : ''}
         <span class="prod-img-emoji" ${p.img?'style="display:none"':''}>${p.emoji}</span>
         <div class="prod-badges">
@@ -889,7 +889,7 @@ function renderProds() {
           ${p.isNew ? `<span class="badge b-new">جديد</span>` : ''}
           ${p.hot ? `<span class="badge b-hot">🔥</span>` : ''}
         </div>
-        <button class="prod-wish ${inWish?'active':''}" onclick="event.stopPropagation();toggleWishItem(${p.id})">
+        <button class="prod-wish ${inWish?'active':''}" onclick="event.stopPropagation();toggleWishItem('${p.id}')">
           ${inWish ? '♥' : '♡'}
         </button>
       </div>
@@ -904,7 +904,7 @@ function renderProds() {
         </div>
         <div class="prod-foot">
           ${p.stock > 0
-            ? `<button class="add-btn" onclick="addCart(${p.id})"><i class="ti ti-shopping-cart-plus"></i> ${isAr?'أضف للسلة':'Add to Cart'}</button>`
+            ? `<button class="add-btn" onclick="addCart('${p.id}')"><i class="ti ti-shopping-cart-plus"></i> ${isAr?'أضف للسلة':'Add to Cart'}</button>`
             : `<button class="out-btn">نفذ المخزون</button>`
           }
         </div>
@@ -925,7 +925,7 @@ function handleSearch(q) {
   ).slice(0, 7);
   if(!res.length) { drop.classList.remove('show'); return; }
   drop.innerHTML = res.map(p => `
-    <div class="sd-item" onmousedown="addCart(${p.id})">
+    <div class="sd-item" onmousedown="addCart('${p.id}')">
       <div class="sd-emoji">${p.emoji}</div>
       <div class="sd-info">
         <div class="sd-name">${isAr ? p.nameAr : p.nameEn}</div>
