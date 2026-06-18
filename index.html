@@ -753,14 +753,14 @@ const _FB = {
   messagingSenderId:"992363567324",
   appId:"1:992363567324:web:de1417e2809110d0923c19"
 };
-let _db, _auth, _fbReady = false;
+let _db, _auth, fbReady = false;
 try {
   if (!firebase.apps.length) firebase.initializeApp(_FB);
   // Enable offline persistence (Feature 6: Performance)
   db = firebase.firestore();
   try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
   _auth = firebase.auth();
-  _fbReady = true;
+  fbReady = true;
 } catch(e) { console.log('Firebase init:', e.message); }
 
 /* ══════════════════════════════════════════════════════════
@@ -795,14 +795,14 @@ let SHIPPING_RATES = {
 
 /* ── Fetch shipping rates from Firestore (Feature 3) ── */
 async function fetchShippingRates() {
-  if (!_fbReady) return;
+  if (!fbReady) return;
   try {
-    const snap = await _db.collection('shipping_rates').get();
+    const snap = await db.collection('shipping_rates').get();
     if (snap.empty) {
       // Seed the shipping_rates collection from defaults
-      const batch = _db.batch();
+      const batch = db.batch();
       Object.entries(SHIPPING_RATES).forEach(([name, data]) => {
-        const ref = _db.collection('shipping_rates').doc(name);
+        const ref = db.collection('shipping_rates').doc(name);
         batch.set(ref, {province_name:name, shipping_cost:data.price, free_shipping_threshold:data.threshold, delivery_days:data.days}, {merge:true});
       });
       await batch.commit();
@@ -843,9 +843,9 @@ _auth && _auth.onAuthStateChanged(async user => {
 });
 
 async function loadUserProfile(uid) {
-  if (!_fbReady) return;
+  if (!fbReady) return;
   try {
-    const doc = await _db.collection('users').doc(uid).get();
+    const doc = await db.collection('users').doc(uid).get();
     if (doc.exists) {
       userProfile = doc.data();
       // Pre-fill checkout form
@@ -898,9 +898,9 @@ function prefillCheckout() {
 
 /* ── Create user document on first registration ── */
 async function createUserDoc(uid, data) {
-  if (!_fbReady) return;
+  if (!fbReady) return;
   try {
-    await _db.collection('users').doc(uid).set({
+    await db.collection('users').doc(uid).set({
       uid,
       display_name: data.name || '',
       email: data.email || null,
@@ -1049,11 +1049,11 @@ const STATIC_PRODUCTS = [
 
 /* ── Load first batch of products from Firestore (pagination) ── */
 async function loadProductsPage(reset=false) {
-  if (!_fbReady || _loadingMore) return;
+  if (!fbReady || _loadingMore) return;
   _loadingMore = true;
   updateLoadMoreBtn(true);
   try {
-    let q = _db.collection('products').where('visible','!=',false).orderBy('visible').orderBy('createdAt','desc').limit(CONFIG.PAGE_SIZE);
+    let q = db.collection('products').where('visible','!=',false).orderBy('visible').orderBy('createdAt','desc').limit(CONFIG.PAGE_SIZE);
     if (!reset && _lastDoc) q = q.startAfter(_lastDoc);
     const snap = await q.get();
     if (snap.empty && reset) {
@@ -1099,15 +1099,15 @@ function updateLoadMoreBtn(loading) {
 
 /* ── Realtime product updates from Firestore ── */
 function startProductListener() {
-  if (!_fbReady) return;
-  _db.collection('products').where('visible','!=',false).onSnapshot(snap => {
+  if (!fbReady) return;
+  db.collection('products').where('visible','!=',false).onSnapshot(snap => {
     if (!snap.empty) {
       const fresh = snap.docs.map(d=>({...d.data(),id:d.id})).filter(p=>p.nameAr&&p.visible!==false);
       if (fresh.length > 0) { PRODUCTS = fresh; renderCats(); renderProds(); }
     }
   }, ()=>{});
   // Settings
-  _db.collection('settings').doc('store').onSnapshot(doc => {
+  db.collection('settings').doc('store').onSnapshot(doc => {
     if (doc.exists) {
       const s = doc.data();
       if (s.whatsapp) CONFIG.WHATSAPP = s.whatsapp.replace(/[^0-9]/g,'');
@@ -1317,7 +1317,7 @@ async function saveForLater(id) {
   if (currentUser) {
     // Logged-in: save to Firestore
     try {
-      await _db.collection('users').doc(currentUser.uid).update({
+      await db.collection('users').doc(currentUser.uid).update({
         saved_items: firebase.firestore.FieldValue.arrayUnion(String(id))
       });
       toast('🔖 تم حفظ المنتج في حسابك');
@@ -1335,12 +1335,12 @@ async function saveForLater(id) {
 
 /* Merge LocalStorage saved_for_later into Firestore on login */
 async function mergeLocalSavedItems() {
-  if (!currentUser || !_fbReady) return;
+  if (!currentUser || !fbReady) return;
   try {
     const local = JSON.parse(localStorage.getItem('saved_for_later')||'[]');
     if (!local.length) return;
     const ids = local.map(x=>String(x.id));
-    await _db.collection('users').doc(currentUser.uid).update({
+    await db.collection('users').doc(currentUser.uid).update({
       saved_items: firebase.firestore.FieldValue.arrayUnion(...ids)
     });
     localStorage.removeItem('saved_for_later');
@@ -1498,9 +1498,9 @@ function closeCheckout() { document.getElementById('checkout-modal').classList.r
 /* ── COUPON SYSTEM ── */
 let _coupons = [];
 async function loadCoupons() {
-  if (!_fbReady) return;
+  if (!fbReady) return;
   try {
-    const snap = await _db.collection('coupons').where('active','==',true).get();
+    const snap = await db.collection('coupons').where('active','==',true).get();
     _coupons = snap.docs.map(d=>({id:d.id,...d.data()}));
   } catch(e) { _coupons = []; }
 }
@@ -1581,10 +1581,10 @@ async function submitOrder() {
   orders.unshift(order);
   localStorage.setItem('lamsay_orders', JSON.stringify(orders));
   // Save to Firestore
-  if (_fbReady) {
-    _db.collection('orders').add({...order, createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
+  if (fbReady) {
+    db.collection('orders').add({...order, createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
           // Auto-save customer to users collection
-          if(_fbReady && _db){
+          if(fbReady && _db){
             try {
               var custPh = document.getElementById('c-phone') ? document.getElementById('c-phone').value.trim() : '';
               var custNm = document.getElementById('c-name')  ? document.getElementById('c-name').value.trim()  : '';
@@ -1593,7 +1593,7 @@ async function submitOrder() {
               var custAd = document.getElementById('c-address')? document.getElementById('c-address').value.trim() : '';
               if(custPh){
                 var cDocId = custPh.replace(/[^0-9]/g,'');
-                var cRef = _db.collection('users').doc(cDocId);
+                var cRef = db.collection('users').doc(cDocId);
                 var cSnap = await cRef.get();
                 if(!cSnap.exists){
                   await cRef.set({ uid: cDocId, display_name: custNm, email: '', phone_number: custPh, default_province: custGv, default_address: custAd+(custCt?', '+custCt:''), created_at: firebase.firestore.FieldValue.serverTimestamp(), saved_items: [], orders_count: 1, source: 'guest_order' });
@@ -1605,7 +1605,7 @@ async function submitOrder() {
           }
 
     saveCustomerData(order);
-    if (activeCoupon) _db.collection('coupons').where('code','==',activeCoupon.code).get().then(s=>s.docs[0]?.ref.update({usedCount:firebase.firestore.FieldValue.increment(1)})).catch(()=>{});
+    if (activeCoupon) db.collection('coupons').where('code','==',activeCoupon.code).get().then(s=>s.docs[0]?.ref.update({usedCount:firebase.firestore.FieldValue.increment(1)})).catch(()=>{});
   }
   // Handle guest save-profile
   const chk = document.getElementById('chk-save-profile');
@@ -1633,9 +1633,9 @@ async function submitOrder() {
 function closeSuccess() { document.getElementById('success-modal').classList.remove('open'); }
 
 async function saveCustomerData(order) {
-  if (!_fbReady||!order.phone) return;
+  if (!fbReady||!order.phone) return;
   try {
-    const ref = _db.collection('customers').doc(order.phone.replace(/[^0-9]/g,''));
+    const ref = db.collection('customers').doc(order.phone.replace(/[^0-9]/g,''));
     const ex  = await ref.get();
     if (ex.exists) {
       await ref.update({name:order.name, gov:order.gov, city:order.city, address:order.address||'',
@@ -1660,9 +1660,9 @@ let _currentProdId = null;
 async function loadProductQA(prodId) {
   const list = document.getElementById('qa-list');
   if (!list) return;
-  if (!_fbReady) { list.innerHTML = '<div style="color:var(--g);font-size:12px;text-align:center">لا توجد أسئلة</div>'; return; }
+  if (!fbReady) { list.innerHTML = '<div style="color:var(--g);font-size:12px;text-align:center">لا توجد أسئلة</div>'; return; }
   try {
-    const snap = await _db.collection('product_questions')
+    const snap = await db.collection('product_questions')
       .where('product_id','==',String(prodId))
       .where('is_approved','==',true)
       .orderBy('timestamp','desc')
@@ -1689,9 +1689,9 @@ async function submitQuestion() {
   const inp = document.getElementById('qa-input');
   const text = inp?.value.trim();
   if (!text) { toast('اكتب سؤالك أولاً'); return; }
-  if (!_fbReady) { toast('غير متصل بقاعدة البيانات'); return; }
+  if (!fbReady) { toast('غير متصل بقاعدة البيانات'); return; }
   try {
-    await _db.collection('product_questions').add({
+    await db.collection('product_questions').add({
       product_id: String(_currentProdId),
       question_text: text,
       asked_by: currentUser ? (userProfile?.display_name||'عميل') : 'زائر',
@@ -1732,7 +1732,7 @@ function closeProdModal() { document.getElementById('prod-modal').classList.remo
    ANALYTICS TRACKING
    ══════════════════════════════════════════════════════════ */
 (async function trackVisit() {
-  if (!_fbReady) return;
+  if (!fbReady) return;
   try {
     const ref = document.referrer;
     let source = 'direct';
@@ -1746,7 +1746,7 @@ function closeProdModal() { document.getElementById('prod-modal').classList.remo
     const params = new URLSearchParams(window.location.search);
     const utm = params.get('utm_source')||params.get('ref');
     if (utm) source=utm;
-    await _db.collection('analytics').add({
+    await db.collection('analytics').add({
       type:'pageview', source, page:window.location.pathname,
       isMobile:/Mobi|Android|iPhone/i.test(navigator.userAgent),
       timestamp:firebase.firestore.FieldValue.serverTimestamp(),
