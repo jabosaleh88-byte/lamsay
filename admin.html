@@ -19,6 +19,48 @@ document.addEventListener('DOMContentLoaded',function(){var b=document.queryhSel
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+(function(){document.addEventListener('DOMContentLoaded',function(){var mc=document.getElementById('admin-main-content');if(mc)mc.style.display='none';});})();
+const ADMIN_EMAILS=['jabosaleh88@gmail.com','lamsay2026@gmail.com','admin@lamsay.com'];
+function checkAdminAuth(){
+  firebase.auth().onAuthStateChanged(function(user){
+    var mc=document.getElementById('admin-main-content');
+    var ov=document.getElementById('admin-auth-overlay');
+    if(user && ADMIN_EMAILS.includes(user.email)){
+      if(mc)mc.style.display='block';
+      if(ov)ov.style.display='none';
+      var el=document.getElementById('admin-logged-name');
+      if(el)el.textContent=user.displayName||user.email;
+    } else if(user){
+      firebase.auth().signOut();
+      showAdminLoginErr('هذا الحساب ليس لديه صلاحية الإدارة');
+    } else {
+      if(mc)mc.style.display='none';
+      if(ov)ov.style.display='flex';
+    }
+  });
+}
+async function doAdminLogin(){
+  var em=(document.getElementById('admin-login-email')||{}).value||'';
+  var pw=(document.getElementById('admin-login-pass')||{}).value||'';
+  if(!em||!pw){showAdminLoginErr('يرجى تعبئة الحقول');return;}
+  try{
+    var btn=document.getElementById('admin-login-btn');
+    if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول...';}
+    await firebase.auth().signInWithEmailAndPassword(em,pw);
+  }catch(e){
+    var m={'auth/wrong-password':'كلمة المرور غير صحيحة','auth/user-not-found':'البريد غير مسجّل','auth/too-many-requests':'محاولات كثيرة','auth/invalid-credential':'بيانات غير صحيحة'};
+    showAdminLoginErr(m[e.code]||'خطأ: '+e.message);
+    var btn2=document.getElementById('admin-login-btn');
+    if(btn2){btn2.disabled=false;btn2.textContent='دخول';}
+  }
+}
+function showAdminLoginErr(msg){var el=document.getElementById('admin-login-error');if(el){el.textContent=msg;el.style.display='block';}}
+async function doAdminLogout(){await firebase.auth().signOut();}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(checkAdminAuth,400);});
+</script>
+
 <style>
 :root{--gold:#C9A84C;--gold-l:#E8C96A;--gold-d:#9A7A30;--black:#090909;--dark:#111;--dark2:#1A1A1A;--dark3:#222;--dark4:#2a2a2a;--g:#666;--gl:#999;--w:#fff;--red:#e05555;--green:#5ec887;--blue:#5B8AF0;--purple:#9B6AF0;--orange:#E8894A;--r:10px;--rl:14px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -194,6 +236,19 @@ input,select,textarea{font-family:inherit}
 </style>
 </head>
 <body>
+<div id="admin-auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(9,9,9,0.97);z-index:99999;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="background:#111;border:1px solid #C9A84C;border-radius:16px;padding:40px 32px;width:340px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:8px;">👑</div>
+    <h2 style="color:#C9A84C;margin:0 0 4px;font-size:1.4rem;">لوحة تحكم لمسة</h2>
+    <p style="color:#888;font-size:0.85rem;margin:0 0 24px;">للمسؤولين المعتمدين فقط</p>
+    <input id="admin-login-email" type="email" placeholder="البريد الإلكتروني" style="width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:#fff;font-size:1rem;margin-bottom:12px;box-sizing:border-box;text-align:right;" dir="rtl">
+    <input id="admin-login-pass" type="password" placeholder="كلمة المرور" style="width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:#fff;font-size:1rem;margin-bottom:8px;box-sizing:border-box;text-align:right;" dir="rtl" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <p id="admin-login-error" style="display:none;color:#e74c3c;font-size:0.85rem;margin:8px 0;padding:8px;background:rgba(231,76,60,0.1);border-radius:6px;"></p>
+    <button id="admin-login-btn" onclick="doAdminLogin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#000;border:none;border-radius:8px;font-size:1.1rem;font-weight:700;cursor:pointer;margin-top:8px;">دخول</button>
+  </div>
+</div>
+<div id="admin-main-content" style="display:none;">
+
 <div class="loading-ov" id="loading-ov">
   <div class="loading-logo">lamsay</div>
   <div style="font-size:12px;color:var(--gl)">جارٍ تحميل لوحة التحكم...</div>
@@ -1650,5 +1705,7 @@ if (localStorage.getItem('lamsay_auto_report') === '1') {
   </div>
 </div>
 
+
+</div><!-- /admin-main-content -->
 </body>
 </html>
