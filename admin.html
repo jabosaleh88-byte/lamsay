@@ -2,10 +2,41 @@
 <html lang="ar" dir="rtl">
 <head>
 <script>
-/* lamsay-login-fix-v3 */
-window.doLogin=function(){var i=document.getElementById('login-pass'),e=document.getElementById('login-err'),p=localStorage.getItem('lamsay_admin_pass')||'lamsay2025';if(i&&i.value===p){sessionStorage.setItem('lamsay_logged','yes');var s=document.getElementById('login-screen');if(s)s.style.display='none';if(e)e.style.display='none';}else{if(e){e.style.display='block';e.textContent='❌ كلمة المرور غير صحيحة';}if(i){i.value='';i.focus();}}};
+/* lamsay-pin-v1 */
+var _pinEntered='';
+var _pinCorrect=localStorage.getItem('lamsay_admin_pin')||'1987';
+function _pinInput(n){
+  if(_pinEntered.length>=4)return;
+  _pinEntered+=n;
+  _updatePinDots();
+  if(_pinEntered.length===4){
+    setTimeout(function(){
+      if(_pinEntered===_pinCorrect){
+        sessionStorage.setItem('lamsay_logged','yes');
+        var s=document.getElementById('login-screen');
+        if(s)s.style.display='none';
+      } else {
+        _pinEntered='';
+        _updatePinDots();
+        var err=document.getElementById('pin-err');
+        if(err){err.style.display='block';clearTimeout(err._t);err._t=setTimeout(function(){err.style.display='none';},2000);}
+        var dots=document.querySelectorAll('.pin-dot');
+        dots.forEach(function(d){d.classList.add('shake');setTimeout(function(){d.classList.remove('shake');},500);});
+      }
+    },150);
+  }
+}
+function _pinDel(){
+  _pinEntered=_pinEntered.slice(0,-1);
+  _updatePinDots();
+}
+function _updatePinDots(){
+  var dots=document.querySelectorAll('.pin-dot');
+  dots.forEach(function(d,i){
+    d.classList.toggle('filled',i<_pinEntered.length);
+  });
+}
 window.doLogout=function(){sessionStorage.removeItem('lamsay_logged');location.reload();};
-document.addEventListener('DOMContentLoaded',function(){var b=document.querySelector('#login-screen button');if(b)b.onclick=window.doLogin;var i=document.getElementById('login-pass');if(i)i.onkeydown=function(e){if(e.key==='Enter')window.doLogin();};});
 </script>
 <meta charset="UTF-8">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
