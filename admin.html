@@ -178,6 +178,17 @@ input,select,textarea{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.stats-row{grid-template-columns:1fr 1fr}.charts-row{grid-template-columns:1fr}.settings-grid{grid-column:1fr}.fgrid{grid-template-columns:1fr}.fg.full{grid-column:span 1}}
 @media(max-width:768px){body{flex-direction:column}.sidebar{width:100%;min-height:auto;height:auto;position:relative}.sb-nav{display:flex;overflow-x:auto;padding:8px;gap:4px}.sb-sec{display:none}.sb-foot{display:none}}
+/* ANALYTICS & REPORTS */
+.chart-bar-wrap{display:flex;flex-direction:column;gap:7px}
+.chart-bar-item{display:flex;align-items:center;gap:10px;font-size:12px}
+.chart-bar-label{width:90px;text-align:right;color:var(--gl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.chart-bar-track{flex:1;background:var(--dark4);border-radius:4px;height:18px;overflow:hidden;position:relative}
+.chart-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.chart-bar-val{font-size:10px;font-weight:700;color:var(--w);white-space:nowrap;position:absolute;right:6px;top:2px}
+.coupon-badge-active{background:rgba(94,200,135,.12);color:var(--green);border:1px solid rgba(94,200,135,.3);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.coupon-badge-inactive{background:rgba(224,85,85,.12);color:var(--red);border:1px solid rgba(224,85,85,.3);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.btn-sec{background:var(--dark3);border:1px solid var(--dark4);border-radius:var(--r);padding:9px 16px;font-size:12px;font-weight:700;color:var(--gl);cursor:pointer;transition:all .15s}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -194,7 +205,11 @@ input,select,textarea{font-family:inherit}
     <div class="sb-sec">المتجر</div>
     <div class="sb-item" onclick="showTab('products',this)"><i class="ti ti-package"></i> المنتجات <span class="sb-cnt gold" id="sb-pc">0</span></div>
     <div class="sb-item" onclick="showTab('orders',this)"><i class="ti ti-shopping-bag"></i> الطلبات <span class="sb-cnt red" id="sb-oc"></span></div>
-    <div class="sb-item" onclick="showTab('customers',this)"><i class="ti ti-users"></i> العملاء</div>
+    <div class="sb-item" onclick="showTab('customers',this)"><i class="ti ti-users"></i> العملاء <span class="sb-cnt blue" id="sb-custc"></span></div>
+    <div class="sb-sec">أدوات تسويقية</div>
+    <div class="sb-item" onclick="showTab('analytics',this)"><i class="ti ti-chart-bar"></i> التحليلات</div>
+    <div class="sb-item" onclick="showTab('coupons',this)"><i class="ti ti-ticket"></i> كوبونات الخصم</div>
+    <div class="sb-item" onclick="showTab('reports',this)"><i class="ti ti-report"></i> التقارير الأسبوعية</div>
     <div class="sb-sec">الإعدادات</div>
     <div class="sb-item" onclick="showTab('settings',this)"><i class="ti ti-settings"></i> الإعدادات</div>
     <div class="sb-item" onclick="window.open('index.html','_blank')"><i class="ti ti-external-link"></i> معاينة الموقع</div>
@@ -260,6 +275,109 @@ input,select,textarea{font-family:inherit}
     <div class="tab" id="tab-customers">
       <div class="tw"><table class="tbl"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>الطلبات</th><th>الإنفاق</th><th>آخر طلب</th><th>واتساب</th></tr></thead><tbody id="cust-tbody"></tbody></table></div>
     </div>
+    <!-- ANALYTICS TAB -->
+    <div class="tab" id="tab-analytics">
+      <div class="sc-title" style="margin-bottom:20px"><i class="ti ti-chart-bar"></i> تحليلات الموقع</div>
+      <div class="stats-row" style="margin-bottom:20px">
+        <div class="stat"><div class="stat-top"><div class="s-icon" style="background:rgba(91,138,240,.15)"><i class="ti ti-eye" style="color:#7aa8ff"></i></div></div><div class="s-val" id="an-total-visits">0</div><div class="s-lbl">إجمالي الزيارات</div></div>
+        <div class="stat"><div class="stat-top"><div class="s-icon" style="background:rgba(94,200,135,.15)"><i class="ti ti-device-mobile" style="color:var(--green)"></i></div></div><div class="s-val" id="an-mobile-pct">0%</div><div class="s-lbl">زيارات الموبايل</div></div>
+        <div class="stat"><div class="stat-top"><div class="s-icon" style="background:rgba(201,168,76,.15)"><i class="ti ti-map-pin" style="color:var(--gold)"></i></div></div><div class="s-val" id="an-top-gov">—</div><div class="s-lbl">أكثر محافظة طلباً</div></div>
+        <div class="stat"><div class="stat-top"><div class="s-icon" style="background:rgba(224,85,85,.15)"><i class="ti ti-brand-instagram" style="color:#ff7c7c"></i></div></div><div class="s-val" id="an-top-source">—</div><div class="s-lbl">أقوى مصدر زيارة</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
+        <div class="sc">
+          <div class="sc-title"><i class="ti ti-map"></i> الطلبات حسب المحافظة</div>
+          <div id="an-gov-chart" style="margin-top:12px"></div>
+        </div>
+        <div class="sc">
+          <div class="sc-title"><i class="ti ti-chart-pie"></i> مصادر الزيارات</div>
+          <div id="an-source-chart" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-title" style="display:flex;justify-content:space-between"><span><i class="ti ti-device-desktop"></i> الجهاز المستخدم</span><span id="an-device-info" style="font-size:12px;color:var(--gl)"></span></div>
+        <div id="an-device-chart" style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap"></div>
+      </div>
+      <div class="sc" style="margin-top:18px">
+        <div class="sc-title"><i class="ti ti-trending-up"></i> أكثر المنتجات طلباً</div>
+        <div id="an-top-products" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- COUPONS TAB -->
+    <div class="tab" id="tab-coupons">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="sc-title"><i class="ti ti-ticket"></i> إدارة كوبونات الخصم</div>
+        <button class="btn-p" onclick="showAddCoupon()"><i class="ti ti-plus"></i> كوبون جديد</button>
+      </div>
+      <!-- نموذج إضافة كوبون -->
+      <div class="sc" id="coupon-form-box" style="display:none;margin-bottom:20px;border:1px solid rgba(91,138,240,.3)">
+        <div class="sc-title" style="color:#7aa8ff"><i class="ti ti-plus"></i> إضافة كوبون جديد</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px">
+          <div class="fg"><label>كود الخصم *</label><input class="fi" id="cp-code" placeholder="مثال: LAMSAY20" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="fg"><label>نوع الخصم</label>
+            <select class="fi" id="cp-type" onchange="updateCouponPreview()">
+              <option value="percent">نسبة مئوية %</option>
+              <option value="fixed">مبلغ ثابت د.أ</option>
+            </select>
+          </div>
+          <div class="fg"><label>قيمة الخصم *</label><input class="fi" id="cp-value" type="number" min="1" placeholder="مثال: 20" oninput="updateCouponPreview()"></div>
+          <div class="fg"><label>الحد الأدنى للطلب (د.أ)</label><input class="fi" id="cp-min" type="number" min="0" placeholder="0 = بدون حد أدنى"></div>
+          <div class="fg"><label>تاريخ انتهاء الصلاحية</label><input class="fi" id="cp-exp" type="date"></div>
+          <div class="fg"><label>معاينة</label><div id="cp-preview" style="padding:8px 12px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--green);font-weight:700">اختر النوع والقيمة</div></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn-p" onclick="saveCoupon()"><i class="ti ti-check"></i> حفظ الكوبون</button>
+          <button class="btn-sec" onclick="document.getElementById('coupon-form-box').style.display='none'">إلغاء</button>
+        </div>
+      </div>
+      <!-- جدول الكوبونات -->
+      <div class="tw"><table class="tbl">
+        <thead><tr><th>الكود</th><th>النوع</th><th>القيمة</th><th>الحد الأدنى</th><th>الانتهاء</th><th>استخدم</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody id="coupons-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div class="tab" id="tab-reports">
+      <div class="sc-title" style="margin-bottom:20px"><i class="ti ti-report"></i> التقارير الأسبوعية</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
+        <div class="sc">
+          <div class="sc-title"><i class="ti ti-brand-whatsapp" style="color:var(--green)"></i> إرسال لواتساب</div>
+          <p style="font-size:13px;color:var(--gl);margin:10px 0 16px">إرسال تقرير أسبوعي شامل (الطلبات + العملاء + الإيرادات) عبر الواتساب</p>
+          <div class="fg" style="margin-bottom:12px"><label>رقم الواتساب للتقرير</label><input class="fi" id="rep-wa" placeholder="962778827075" id="rep-wa-num"></div>
+          <button class="btn-p" onclick="sendWeeklyWAReport()" style="background:linear-gradient(135deg,#25a65b,#1d8a4c)"><i class="ti ti-brand-whatsapp"></i> إرسال التقرير الآن</button>
+          <div id="rep-wa-status" style="margin-top:10px;font-size:12px"></div>
+        </div>
+        <div class="sc">
+          <div class="sc-title"><i class="ti ti-mail" style="color:var(--blue)"></i> إرسال بالإيميل</div>
+          <p style="font-size:13px;color:var(--gl);margin:10px 0 16px">تصدير قاعدة العملاء كملف CSV وإرسالها بالإيميل (يفتح تطبيق الإيميل)</p>
+          <div class="fg" style="margin-bottom:12px"><label>البريد الإلكتروني</label><input class="fi" id="rep-email" placeholder="your@email.com"></div>
+          <button class="btn-p" onclick="sendEmailReport()" style="background:linear-gradient(135deg,#3a7bd5,#2563c0)"><i class="ti ti-mail"></i> فتح الإيميل مع التقرير</button>
+          <div id="rep-email-status" style="margin-top:10px;font-size:12px"></div>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span><i class="ti ti-table-export"></i> تصدير قاعدة العملاء</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sec" onclick="exportCustomersCSV()"><i class="ti ti-file-spreadsheet"></i> تصدير CSV</button>
+            <button class="btn-sec" onclick="copyCustomersText()"><i class="ti ti-copy"></i> نسخ النص</button>
+          </div>
+        </div>
+        <div id="rep-customers-preview" style="margin-top:14px;max-height:300px;overflow-y:auto"></div>
+      </div>
+      <div class="sc" style="margin-top:18px">
+        <div class="sc-title"><i class="ti ti-clock"></i> التقارير المجدولة</div>
+        <p style="font-size:13px;color:var(--gl);margin:10px 0 16px">سيتم إرسال تقرير أسبوعي تلقائي كل يوم اثنين</p>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="font-size:13px;font-weight:700">التفعيل:</label>
+          <input type="checkbox" id="rep-auto-enable" style="width:18px;height:18px;cursor:pointer" onchange="toggleAutoReport(this.checked)">
+          <span id="rep-auto-status" style="font-size:12px;color:var(--gl)">غير مفعّل</span>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="tab" id="tab-settings">
       <div class="settings-grid">
@@ -808,6 +926,344 @@ function doLogout() {
   sessionStorage.removeItem("lamsay_logged");
   location.reload();
 }
+
+
+// ════════════════════════════════════════════
+// 📊 تحليلات الموقع
+// ════════════════════════════════════════════
+async function loadAnalytics() {
+  try {
+    // إجمالي الزيارات من analytics collection
+    const analyticsSnap = await db.collection('analytics').orderBy('timestamp','desc').limit(500).get();
+    const visits = analyticsSnap.docs.map(d => d.data());
+    
+    document.getElementById('an-total-visits').textContent = visits.length;
+    
+    const mobileCount = visits.filter(v => v.isMobile).length;
+    document.getElementById('an-mobile-pct').textContent = visits.length ? Math.round(mobileCount/visits.length*100) + '%' : '0%';
+
+    // مصادر الزيارات
+    const sources = {};
+    visits.forEach(v => { sources[v.source || 'direct'] = (sources[v.source || 'direct'] || 0) + 1; });
+    const topSource = Object.entries(sources).sort((a,b) => b[1]-a[1])[0];
+    if (topSource) {
+      const sourceLabels = { google:'جوجل', facebook:'فيسبوك', instagram:'إنستقرام', whatsapp:'واتساب', snapchat:'سناب', tiktok:'تيك توك', direct:'مباشر', other:'أخرى' };
+      document.getElementById('an-top-source').textContent = sourceLabels[topSource[0]] || topSource[0];
+    }
+
+    // رسم مصادر الزيارات
+    const sourceColors = { google:'#4285f4', facebook:'#1877f2', instagram:'#e1306c', whatsapp:'#25d366', snapchat:'#fffc00', tiktok:'#010101', direct:'var(--gold)', other:'var(--gl)' };
+    const sortedSources = Object.entries(sources).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const maxSrc = sortedSources[0]?.[1] || 1;
+    const srcLabels = { google:'جوجل', facebook:'فيسبوك', instagram:'إنستقرام', whatsapp:'واتساب', snapchat:'سناب', tiktok:'تيك توك', direct:'مباشر', other:'أخرى' };
+    document.getElementById('an-source-chart').innerHTML = `<div class="chart-bar-wrap">${
+      sortedSources.map(([src,cnt]) => `
+        <div class="chart-bar-item">
+          <div class="chart-bar-label">${srcLabels[src]||src}</div>
+          <div class="chart-bar-track">
+            <div class="chart-bar-fill" style="width:${Math.round(cnt/maxSrc*100)}%;background:${sourceColors[src]||'var(--blue)'}"></div>
+            <span class="chart-bar-val">${cnt}</span>
+          </div>
+        </div>`).join('')
+    }</div>`;
+
+    // الجهاز
+    const deviceCount = { mobile: mobileCount, desktop: visits.length - mobileCount };
+    document.getElementById('an-device-chart').innerHTML = `
+      <div style="background:rgba(94,200,135,.1);border:1px solid rgba(94,200,135,.25);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+        <i class="ti ti-device-mobile" style="font-size:22px;color:var(--green)"></i>
+        <div><div style="font-size:18px;font-weight:800;color:var(--green)">${deviceCount.mobile}</div><div style="font-size:11px;color:var(--gl)">موبايل</div></div>
+      </div>
+      <div style="background:rgba(91,138,240,.1);border:1px solid rgba(91,138,240,.25);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px">
+        <i class="ti ti-desktop" style="font-size:22px;color:#7aa8ff"></i>
+        <div><div style="font-size:18px;font-weight:800;color:#7aa8ff">${deviceCount.desktop}</div><div style="font-size:11px;color:var(--gl)">ديسكتوب</div></div>
+      </div>`;
+
+    // الطلبات حسب المحافظة
+    const ordersSnap = await db.collection('orders').get();
+    const orders = ordersSnap.docs.map(d => d.data());
+    const govMap = {};
+    orders.forEach(o => { if(o.gov) govMap[o.gov] = (govMap[o.gov]||0) + 1; });
+    const sortedGovs = Object.entries(govMap).sort((a,b) => b[1]-a[1]);
+    if(sortedGovs[0]) document.getElementById('an-top-gov').textContent = sortedGovs[0][0];
+    const maxGov = sortedGovs[0]?.[1] || 1;
+    document.getElementById('an-gov-chart').innerHTML = `<div class="chart-bar-wrap">${
+      sortedGovs.slice(0,8).map(([gov,cnt]) => `
+        <div class="chart-bar-item">
+          <div class="chart-bar-label">${gov}</div>
+          <div class="chart-bar-track">
+            <div class="chart-bar-fill" style="width:${Math.round(cnt/maxGov*100)}%;background:var(--gold)"></div>
+            <span class="chart-bar-val">${cnt}</span>
+          </div>
+        </div>`).join('')
+    }</div>`;
+
+    // أكثر المنتجات طلباً
+    const prodMap = {};
+    orders.forEach(o => { (o.items||[]).forEach(it => { prodMap[it.name] = (prodMap[it.name]||0) + (it.qty||1); }); });
+    const sortedProds = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const maxProd = sortedProds[0]?.[1] || 1;
+    document.getElementById('an-top-products').innerHTML = `<div class="chart-bar-wrap">${
+      sortedProds.map(([name,qty]) => `
+        <div class="chart-bar-item">
+          <div class="chart-bar-label">${name.substring(0,15)}</div>
+          <div class="chart-bar-track">
+            <div class="chart-bar-fill" style="width:${Math.round(qty/maxProd*100)}%;background:var(--blue)"></div>
+            <span class="chart-bar-val">${qty} قطعة</span>
+          </div>
+        </div>`).join('')
+    }</div>`;
+
+  } catch(e) { console.log('Analytics error:', e.message); }
+}
+
+// ════════════════════════════════════════════
+// 🎟️ إدارة الكوبونات
+// ════════════════════════════════════════════
+async function loadCoupons() {
+  try {
+    const snap = await db.collection('coupons').orderBy('createdAt','desc').get();
+    const tbody = document.getElementById('coupons-tbody');
+    if (!tbody) return;
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--g)">لا توجد كوبونات بعد</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(d => {
+      const c = d.data();
+      const isActive = c.active !== false && (!c.expiresAt || (c.expiresAt.toDate && c.expiresAt.toDate() > new Date()));
+      return `<tr>
+        <td><strong style="color:var(--gold);font-family:monospace">${c.code}</strong></td>
+        <td>${c.type === 'percent' ? 'نسبة %' : 'مبلغ ثابت'}</td>
+        <td style="color:var(--green);font-weight:700">${c.type === 'percent' ? c.value + '%' : c.value + ' د.أ'}</td>
+        <td>${c.minOrder ? c.minOrder + ' د.أ' : '—'}</td>
+        <td>${c.expiresAt && c.expiresAt.toDate ? c.expiresAt.toDate().toLocaleDateString('ar-JO') : 'دائم'}</td>
+        <td>${c.usedCount || 0}</td>
+        <td><span class="coupon-badge-${isActive ? 'active' : 'inactive'}">${isActive ? 'فعّال' : 'منتهي'}</span></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn-sec" style="padding:5px 10px;font-size:11px" onclick="toggleCoupon('${d.id}',${!c.active})">${c.active===false?'تفعيل':'إيقاف'}</button>
+          <button class="btn-sec" style="padding:5px 10px;font-size:11px;border-color:rgba(224,85,85,.3);color:var(--red)" onclick="deleteCoupon('${d.id}')">حذف</button>
+        </td>
+      </tr>`;
+    }).join('');
+    document.getElementById('sb-custc') && (document.getElementById('sb-custc').textContent = snap.size);
+  } catch(e) { console.log('Coupons error:', e.message); }
+}
+
+function showAddCoupon() {
+  const box = document.getElementById('coupon-form-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateCouponPreview() {
+  const type = document.getElementById('cp-type').value;
+  const val = document.getElementById('cp-value').value;
+  const prev = document.getElementById('cp-preview');
+  if (!val) { prev.textContent = 'اختر النوع والقيمة'; prev.style.color = 'var(--gl)'; return; }
+  prev.textContent = type === 'percent' ? `خصم ${val}% على المجموع` : `خصم ${val} د.أ ثابت`;
+  prev.style.color = 'var(--green)';
+}
+
+async function saveCoupon() {
+  const code = document.getElementById('cp-code').value.trim().toUpperCase();
+  const type = document.getElementById('cp-type').value;
+  const value = parseFloat(document.getElementById('cp-value').value);
+  const minOrder = parseFloat(document.getElementById('cp-min').value) || 0;
+  const expDate = document.getElementById('cp-exp').value;
+  if (!code || !value) { alert('أدخل الكود والقيمة'); return; }
+  try {
+    const data = { code, type, value, minOrder, active: true, usedCount: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+    if (expDate) data.expiresAt = firebase.firestore.Timestamp.fromDate(new Date(expDate));
+    await db.collection('coupons').add(data);
+    document.getElementById('coupon-form-box').style.display = 'none';
+    ['cp-code','cp-value','cp-min','cp-exp'].forEach(id => document.getElementById(id).value = '');
+    loadCoupons();
+    showToast('✅ تم حفظ الكوبون');
+  } catch(e) { alert('خطأ: ' + e.message); }
+}
+
+async function toggleCoupon(id, active) {
+  await db.collection('coupons').doc(id).update({ active });
+  loadCoupons();
+}
+
+async function deleteCoupon(id) {
+  if (!confirm('حذف هذا الكوبون نهائياً؟')) return;
+  await db.collection('coupons').doc(id).delete();
+  loadCoupons();
+}
+
+// ════════════════════════════════════════════
+// 📋 التقارير الأسبوعية
+// ════════════════════════════════════════════
+async function loadReportsTab() {
+  try {
+    const custSnap = await db.collection('customers').orderBy('totalSpent','desc').limit(100).get();
+    const customers = custSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    const preview = document.getElementById('rep-customers-preview');
+    if (!preview) return;
+    preview.innerHTML = customers.map(c => `
+      <div class="rep-customer-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;background:rgba(201,168,76,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--gold)">${c.name?c.name[0]:'?'}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">${c.name||'—'}</div>
+            <div style="font-size:11px;color:var(--gl)">${c.phone||''} • ${c.gov||''} ${c.city||''}</div>
+          </div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:13px;font-weight:700;color:var(--gold)">${(c.totalSpent||0).toFixed(2)} د.أ</div>
+          <div style="font-size:11px;color:var(--gl)">${c.totalOrders||0} طلب</div>
+        </div>
+      </div>
+    `).join('') || '<div style="text-align:center;padding:24px;color:var(--g)">لا يوجد عملاء بعد</div>';
+
+    // تخزين للتصدير
+    window._allCustomers = customers;
+  } catch(e) { console.log('Reports tab error:', e.message); }
+}
+
+async function sendWeeklyWAReport() {
+  const waNum = document.getElementById('rep-wa').value.trim() || '962778827075';
+  const statusEl = document.getElementById('rep-wa-status');
+  statusEl.textContent = '⏳ جاري تجهيز التقرير...';
+  statusEl.style.color = 'var(--gl)';
+  try {
+    const [ordersSnap, custSnap] = await Promise.all([
+      db.collection('orders').orderBy('createdAt','desc').limit(50).get(),
+      db.collection('customers').get()
+    ]);
+    const orders = ordersSnap.docs.map(d => d.data());
+    const thisWeek = orders.filter(o => {
+      if (!o.createdAt) return false;
+      const date = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      return (new Date() - date) < 7 * 24 * 60 * 60 * 1000;
+    });
+    const weeklyRevenue = thisWeek.reduce((s,o) => s + (o.total||0), 0);
+    const totalCustomers = custSnap.size;
+    const topGovs = {};
+    orders.forEach(o => { if(o.gov) topGovs[o.gov] = (topGovs[o.gov]||0)+1; });
+    const topGov = Object.entries(topGovs).sort((a,b)=>b[1]-a[1])[0];
+
+    let msg = `📊 *التقرير الأسبوعي — lamsay*
+${'─'.repeat(28)}
+`;
+    msg += `📅 ${new Date().toLocaleDateString('ar-JO')}
+
+`;
+    msg += `💰 *إيرادات الأسبوع:* ${weeklyRevenue.toFixed(2)} د.أ
+`;
+    msg += `🛍️ *طلبات الأسبوع:* ${thisWeek.length} طلب
+`;
+    msg += `👥 *إجمالي العملاء:* ${totalCustomers} عميل
+`;
+    msg += `🏙️ *أعلى محافظة:* ${topGov ? topGov[0] + ' (' + topGov[1] + ' طلب)' : '—'}
+
+`;
+    msg += `📋 *آخر 5 طلبات:*
+`;
+    thisWeek.slice(0,5).forEach((o,i) => {
+      msg += `${i+1}. ${o.name||'?'} — ${o.gov||''} — ${(o.total||0).toFixed(2)} د.أ
+`;
+    });
+    msg += `
+${'─'.repeat(28)}
+⏰ أرسل تلقائياً من لوحة التحكم`;
+
+    const waPhone = waNum.replace(/[^0-9]/g,'');
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    const a = document.createElement('a'); a.href = waUrl; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    statusEl.textContent = '✅ تم فتح الواتساب مع التقرير';
+    statusEl.style.color = 'var(--green)';
+  } catch(e) {
+    statusEl.textContent = '❌ خطأ: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+  }
+}
+
+async function sendEmailReport() {
+  const emailEl = document.getElementById('rep-email');
+  const email = emailEl ? emailEl.value.trim() : '';
+  const statusEl = document.getElementById('rep-email-status');
+  if (!email) { statusEl.textContent = '⚠️ أدخل البريد الإلكتروني أولاً'; statusEl.style.color='var(--red)'; return; }
+  
+  // تجميع بيانات العملاء
+  try {
+    const custSnap = await db.collection('customers').get();
+    const customers = custSnap.docs.map(d => d.data());
+    let body = 'قاعدة عملاء متجر لمسة - lamsay\n\n';
+    customers.forEach((c,i) => {
+      body += `${i+1}. ${c.name||'—'} | ${c.phone||'—'} | ${c.gov||'—'} | ${c.city||'—'} | ${c.totalOrders||0} طلب | ${(c.totalSpent||0).toFixed(2)} د.أ\n`;
+    });
+    const subject = `قاعدة العملاء - lamsay - ${new Date().toLocaleDateString('ar-JO')}`;
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+    statusEl.textContent = '✅ تم فتح تطبيق الإيميل';
+    statusEl.style.color = 'var(--green)';
+  } catch(e) {
+    statusEl.textContent = '❌ خطأ: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+  }
+}
+
+function exportCustomersCSV() {
+  const customers = window._allCustomers || [];
+  if (!customers.length) { loadReportsTab().then(exportCustomersCSV); return; }
+  const headers = ['الاسم','الهاتف','المحافظة','المدينة','العنوان','عدد الطلبات','إجمالي الإنفاق','تاريخ أول طلب'];
+  const rows = customers.map(c => [
+    c.name||'', c.phone||'', c.gov||'', c.city||'', c.address||'',
+    c.totalOrders||0, (c.totalSpent||0).toFixed(2),
+    c.firstOrderDate?.toDate ? c.firstOrderDate.toDate().toLocaleDateString('ar-JO') : '—'
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `lamsay-customers-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ تم تصدير قاعدة العملاء');
+}
+
+function copyCustomersText() {
+  const customers = window._allCustomers || [];
+  if (!customers.length) { showToast('لا يوجد عملاء'); return; }
+  const text = customers.map((c,i) => `${i+1}. ${c.name} | ${c.phone} | ${c.gov} ${c.city} | ${c.totalOrders} طلب`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ تم النسخ'));
+}
+
+function toggleAutoReport(enabled) {
+  localStorage.setItem('lamsay_auto_report', enabled ? '1' : '0');
+  document.getElementById('rep-auto-status').textContent = enabled ? '✅ سيُرسل كل يوم اثنين' : 'غير مفعّل';
+  document.getElementById('rep-auto-status').style.color = enabled ? 'var(--green)' : 'var(--gl)';
+  if (enabled) {
+    const now = new Date();
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
+    nextMonday.setHours(9,0,0,0);
+    const msUntil = nextMonday - now;
+    setTimeout(() => { sendWeeklyWAReport(); setInterval(sendWeeklyWAReport, 7*24*60*60*1000); }, msUntil);
+  }
+}
+
+// ════════════════════════════════════════════
+// تحديث showTab لتحميل البيانات عند الفتح
+// ════════════════════════════════════════════
+const _origShowTab = showTab;
+showTab = function(name, el) {
+  _origShowTab(name, el);
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'coupons') loadCoupons();
+  if (name === 'reports') { loadReportsTab(); 
+    // تعبئة رقم الواتساب من الإعدادات
+    const waEl = document.getElementById('rep-wa');
+    if (waEl && ADMIN_CONFIG && ADMIN_CONFIG.whatsapp) waEl.value = ADMIN_CONFIG.whatsapp;
+  }
+};
+
+// تهيئة التقرير التلقائي
+if (localStorage.getItem('lamsay_auto_report') === '1') {
+  document.getElementById('rep-auto-enable') && (document.getElementById('rep-auto-enable').checked = true);
+  toggleAutoReport(true);
+}
+
 </script>
 <button onclick="doLogin()" 
       style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;transition:background .15s"
