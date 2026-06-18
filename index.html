@@ -2,12 +2,33 @@
 <html lang="ar" dir="rtl" id="root">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="متجر لمسة الأردن — أفضل منتجات الجمال، العطور، الأزياء، البهارات والتغذية بالدينار الأردني. شحن لجميع المحافظات الـ 12.">
+<meta name="keywords" content="متجر لمسة، جمال، عطور، أزياء، بهارات، تغذية، الأردن، عمان، دينار أردني">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Lamsay Store">
+<link rel="canonical" href="https://lamsay.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lamsay.com/">
+<meta property="og:title" content="لمسة — متجر الأردن للجمال والعطور والأزياء">
+<meta property="og:description" content="أفضل منتجات الجمال، العطور، الأزياء والبهارات بالدينار الأردني. شحن لجميع محافظات الأردن بـ 3 د.أ">
+<meta property="og:image" content="https://lamsay.com/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ar_JO">
+<meta property="og:site_name" content="لمسة — Lamsay">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="لمسة — متجر الأردن للجمال والعطور">
+<meta name="twitter:description" content="أفضل منتجات الجمال بالدينار الأردني، شحن لجميع المحافظات">
+<meta name="twitter:image" content="https://lamsay.com/og-image.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"لمسة — Lamsay","url":"https://lamsay.com","description":"متجر لمسة الأردن للجمال والعطور والأزياء والبهارات والتغذية","address":{"@type":"PostalAddress","addressCountry":"JO","addressLocality":"عمّان"},"contactPoint":{"@type":"ContactPoint","telephone":"+962778827075","contactType":"customer service","availableLanguage":"Arabic"},"sameAs":["https://wa.me/962778827075"]}</script>
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>lamsay — متجر لمسة الأردن</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -336,6 +357,13 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 @media(max-width:520px){.prods-grid{grid-template-columns:repeat(2,1fr);gap:10px}.hero h1{font-size:24px}.drawer{width:100%}.pay-opts{grid-template-columns:1fr 1fr}.hero-stats{gap:28px}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.skeleton-card{background:#1a1a1a;border-radius:16px;overflow:hidden;}
+.skeleton-img{height:200px;background:linear-gradient(90deg,#1a1a1a 25%,#252525 50%,#1a1a1a 75%);background-size:200% 100%;animation:sk-shimmer 1.5s infinite;}
+.skeleton-text{height:16px;background:#252525;border-radius:6px;margin:12px;animation:sk-shimmer 1.5s infinite;}
+.skeleton-text.short{width:60%;}
+.skeleton-btn{height:40px;background:#252525;border-radius:8px;margin:12px;animation:sk-shimmer 1.5s infinite;}
+@keyframes sk-shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 </style>
 <body>
 <!-- TOPBAR -->
@@ -455,6 +483,7 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 <option value="popular">الأكثر مبيعاً</option>
 </select>
 </div>
+<div id="skeleton-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;padding:20px 0;"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text"></div><div class="skeleton-text short"></div><div class="skeleton-btn"></div></div></div>
 <div class="prods-grid" id="prods-grid"></div>
 <!-- Load More Button (Pagination - Feature 6) -->
 <div style="text-align:center;margin-top:20px">
@@ -729,7 +758,7 @@ try {
   if (!firebase.apps.length) firebase.initializeApp(_FB);
   // Enable offline persistence (Feature 6: Performance)
   _db = firebase.firestore();
-  _db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+  _try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
   _auth = firebase.auth();
   _fbReady = true;
 } catch(e) { console.log('Firebase init:', e.message); }
@@ -1153,6 +1182,8 @@ function doSort(v) {
 function stars(r) { return '★'.repeat(Math.floor(r))+'☆'.repeat(5-Math.floor(r)); }
 
 function renderProds() {
+  var skEl2=document.getElementById('skeleton-grid');if(skEl2)skEl2.style.display='none';
+
   const g = document.getElementById('prods-grid');
   const cnt = document.getElementById('prods-count');
   if (!g) return;
