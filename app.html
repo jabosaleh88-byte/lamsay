@@ -1040,6 +1040,20 @@ async function submitOrder_m(){
       status: 'pending', created_at: firebase.firestore.FieldValue.serverTimestamp(),
       user_id: currentUser ? currentUser.uid : null
     });
+    // Auto-save customer to users collection
+    try {
+      if(phone && db){
+        var mCDId = phone.replace(/[^0-9]/g,'');
+        var mCRef = db.collection('users').doc(mCDId);
+        var mCS = await mCRef.get();
+        if(!mCS.exists){
+          await mCRef.set({ uid: currentUser?currentUser.uid:mCDId, display_name:name, email:currentUser?(currentUser.email||''):'', phone_number:phone, default_province:prov, default_address:addr, created_at:firebase.firestore.FieldValue.serverTimestamp(), saved_items:[], orders_count:1, source:currentUser?'registered':'guest_order' });
+        } else {
+          await mCRef.update({ orders_count:firebase.firestore.FieldValue.increment(1), last_order_at:firebase.firestore.FieldValue.serverTimestamp() });
+        }
+      }
+    } catch(mCE){ console.warn('Mobile cust save:',mCE); }
+
   } catch(e){ console.warn('saveOrder:', e); }
 
   // Clear cart & redirect to WhatsApp
