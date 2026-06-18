@@ -1543,6 +1543,8 @@ async function saveCustomerData(orderData) {
         totalOrders: firebase.firestore.FieldValue.increment(1),
         totalSpent: firebase.firestore.FieldValue.increment(orderData.total),
         lastOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
+        lastOrderItems: orderData.items||[],
+  lastOrderTotal: orderData.total,
         ...couponInfo
       });
     } else {
@@ -1556,6 +1558,8 @@ async function saveCustomerData(orderData) {
         totalSpent: orderData.total,
         firstOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
         lastOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
+        firstOrderItems: orderData.items||[],
+  firstOrderTotal: orderData.total,
         ...couponInfo
       });
     }
