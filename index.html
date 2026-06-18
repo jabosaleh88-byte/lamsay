@@ -301,6 +301,21 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 .success-wa-btn:hover{background:#1ebd5a}
 .success-close-btn{width:100%;background:var(--dark3);color:var(--gl);border-radius:var(--r);padding:12px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--dark4)}
 
+/* ── DISCOUNT CODE ── */
+.coupon-wrap{margin-bottom:16px}
+.coupon-row{display:flex;gap:8px}
+.coupon-input{flex:1;background:var(--dark3);border:1.5px solid var(--dark4);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--w);transition:border-color .15s;outline:none}
+.coupon-input:focus{border-color:var(--gold)}
+.coupon-input.valid{border-color:var(--green)}
+.coupon-input.invalid{border-color:var(--red)}
+.coupon-btn{background:var(--dark3);border:1.5px solid var(--dark4);border-radius:var(--r);padding:10px 16px;font-size:12px;font-weight:700;color:var(--gl);cursor:pointer;transition:all .15s;white-space:nowrap}
+.coupon-btn:hover{border-color:var(--gold);color:var(--gold)}
+.coupon-msg{font-size:12px;margin-top:7px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:8px}
+.coupon-msg.show{display:flex}
+.coupon-msg.ok{background:rgba(94,200,135,.1);color:var(--green);border:1px solid rgba(94,200,135,.25)}
+.coupon-msg.err{background:rgba(224,85,85,.1);color:var(--red);border:1px solid rgba(224,85,85,.25)}
+.os-item.discount{color:var(--green)}
+
 /* ── WHOLESALE MODAL ── */
 .wholesale-btn{flex:1;background:transparent;color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r);padding:10px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;cursor:pointer}
 .wholesale-btn:hover{background:rgba(91,138,240,.12);border-color:#4a7fd4}
@@ -656,10 +671,21 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
       </div>
 
       <!-- Final Total -->
+      <!-- كود الخصم -->
+      <div class="coupon-wrap">
+        <div class="form-section-title"><i class="ti ti-ticket"></i> كود الخصم (اختياري)</div>
+        <div class="coupon-row">
+          <input type="text" id="coupon-input" class="coupon-input" placeholder="أدخل كود الخصم..." maxlength="20" oninput="this.value=this.value.toUpperCase()">
+          <button class="coupon-btn" onclick="applyCoupon()"><i class="ti ti-check"></i> تطبيق</button>
+        </div>
+        <div class="coupon-msg" id="coupon-msg"><i class="ti ti-info-circle"></i><span id="coupon-msg-text"></span></div>
+      </div>
+
       <div class="order-summary">
         <div class="os-title">💰 الإجمالي النهائي</div>
         <div class="os-item"><span>المجموع</span><span id="final-sub">0 د.أ</span></div>
         <div class="os-item"><span>الشحن</span><span id="final-ship" style="color:var(--green)">سيُحدد حسب المحافظة</span></div>
+        <div class="os-item discount" id="discount-row" style="display:none"><span id="discount-label">خصم الكود</span><span id="discount-val" style="color:var(--green)">0 د.أ</span></div>
         <div class="os-item total"><span>الإجمالي</span><span id="final-total">0 د.أ</span></div>
       </div>
 
@@ -827,11 +853,22 @@ function loadFromFirebase() {
 // Save orders to Firebase
 async function saveOrderToFirebase(order) {
   try {
+    // إضافة بيانات الكوبون للطلب
+    const couponData = window._pendingCoupon ? {
+      couponCode: window._pendingCoupon.code,
+      couponDiscount: window._pendingCoupon.discount,
+    } : {};
+
     await _db.collection('orders').add({
       ...order,
+      ...couponData,
       status: 'new',
+      source: window._visitSource || 'direct',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+
+    // حفظ بيانات العميل
+    await saveCustomerData(order);
   } catch(e) { console.log('Order save:', e.message); }
 }
 
@@ -1208,6 +1245,9 @@ function submitOrder() {
   msg += `• *الإجمالي: ${fmt(total)}*\n\n`;
   msg += `🚚 *مدة التوصيل:* ${rate.days}\n`;
   msg += `💳 *طريقة الدفع:* ${payLabel}\n`;
+  if (window._pendingCoupon) {
+    msg += `🎟️ *كود الخصم:* ${window._pendingCoupon.code} (وفرت ${fmt(window._pendingCoupon.discount)})\n`;
+  }
   if(notes) msg += `\n📝 *ملاحظات:* ${notes}\n`;
   msg += `\n${'─'.repeat(30)}\n`;
   msg += `⏰ ${new Date().toLocaleString('ar-JO')}`;
@@ -1251,6 +1291,14 @@ function submitOrder() {
 
   // Reset
   cart = [];
+  activeCoupon = null;
+  window._pendingCoupon = null;
+  const couponInput = document.getElementById('coupon-input');
+  if (couponInput) { couponInput.value = ''; couponInput.className = 'coupon-input'; }
+  const couponMsg = document.getElementById('coupon-msg');
+  if (couponMsg) couponMsg.className = 'coupon-msg';
+  const discRow = document.getElementById('discount-row');
+  if (discRow) discRow.style.display = 'none';
   updateBadge();
   renderCart();
 }
@@ -1307,6 +1355,214 @@ function toast(msg) {
 // 🚀 تشغيل
 // ══════════════════════════════════════════════════════════════
 renderCats();
+
+// ══════════════════════════════════════════════════════════════
+// 🎟️ نظام كود الخصم
+// ══════════════════════════════════════════════════════════════
+let activeCoupon = null;
+
+// تحميل الكوبونات من Firebase
+async function loadCoupons() {
+  try {
+    const snap = await _db.collection('coupons').where('active','==',true).get();
+    window._coupons = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  } catch(e) { window._coupons = []; }
+}
+loadCoupons();
+
+function applyCoupon() {
+  const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+  const inp = document.getElementById('coupon-input');
+  const msg = document.getElementById('coupon-msg');
+  const msgTxt = document.getElementById('coupon-msg-text');
+
+  if (!code) { showCouponMsg('err','أدخل كود الخصم أولاً'); return; }
+
+  const coupons = window._coupons || [];
+  const coupon = coupons.find(c => c.code === code);
+
+  if (!coupon) {
+    inp.className = 'coupon-input invalid';
+    showCouponMsg('err','❌ كود الخصم غير صحيح أو منتهي الصلاحية');
+    activeCoupon = null;
+    updateCheckoutTotals();
+    return;
+  }
+
+  // فحص صلاحية التاريخ
+  if (coupon.expiresAt && coupon.expiresAt.toDate && coupon.expiresAt.toDate() < new Date()) {
+    inp.className = 'coupon-input invalid';
+    showCouponMsg('err','❌ انتهت صلاحية هذا الكود');
+    activeCoupon = null;
+    updateCheckoutTotals();
+    return;
+  }
+
+  // فحص الحد الأدنى للطلب
+  const sub = cart.reduce((s,x) => s + x.price * x.qty, 0);
+  if (coupon.minOrder && sub < coupon.minOrder) {
+    inp.className = 'coupon-input invalid';
+    showCouponMsg('err',`❌ الحد الأدنى لهذا الكود ${fmt(coupon.minOrder)}`);
+    activeCoupon = null;
+    updateCheckoutTotals();
+    return;
+  }
+
+  activeCoupon = coupon;
+  inp.className = 'coupon-input valid';
+  const discAmt = coupon.type === 'percent'
+    ? (sub * coupon.value / 100).toFixed(2)
+    : Math.min(coupon.value, sub).toFixed(2);
+  const label = coupon.type === 'percent' ? `${coupon.value}%` : fmt(parseFloat(discAmt));
+  showCouponMsg('ok',`✅ تم تطبيق الكود! خصم ${label}`);
+  updateCheckoutTotals();
+}
+
+function showCouponMsg(type, text) {
+  const el = document.getElementById('coupon-msg');
+  const txt = document.getElementById('coupon-msg-text');
+  el.className = `coupon-msg show ${type}`;
+  txt.textContent = text;
+}
+
+function getCouponDiscount(sub) {
+  if (!activeCoupon) return 0;
+  if (activeCoupon.type === 'percent') return parseFloat((sub * activeCoupon.value / 100).toFixed(2));
+  return Math.min(activeCoupon.value, sub);
+}
+
+// تحديث updateCheckoutTotals لدعم الخصم
+const _origUpdateTotals = updateCheckoutTotals;
+updateCheckoutTotals = function() {
+  const sub = cart.reduce((s,x) => s + x.price * x.qty, 0);
+  const gov = document.getElementById('c-gov') ? document.getElementById('c-gov').value : '';
+  const rate = gov && SHIPPING_RATES[gov] ? SHIPPING_RATES[gov] : null;
+  const shipCost = rate ? (sub >= CONFIG.FREE_SHIP_ABOVE ? 0 : rate.price) : (sub >= CONFIG.FREE_SHIP_ABOVE ? 0 : 2.5);
+  const discount = getCouponDiscount(sub);
+  const finalTotal = Math.max(0, sub + shipCost - discount);
+
+  document.getElementById('final-sub').textContent = fmt(sub);
+  document.getElementById('final-ship').textContent = shipCost === 0 ? '🎉 مجاني' : fmt(shipCost);
+
+  const discRow = document.getElementById('discount-row');
+  if (discRow) {
+    if (discount > 0) {
+      discRow.style.display = 'flex';
+      const label = activeCoupon.type === 'percent' ? `خصم ${activeCoupon.value}% (${activeCoupon.code})` : `خصم كود (${activeCoupon.code})`;
+      document.getElementById('discount-label').textContent = label;
+      document.getElementById('discount-val').textContent = `−${fmt(discount)}`;
+    } else {
+      discRow.style.display = 'none';
+    }
+  }
+  document.getElementById('final-total').textContent = fmt(finalTotal);
+};
+
+// تحديث submitOrder لتضمين الخصم في الرسالة والحفظ
+const _origSubmitOrder = submitOrder;
+submitOrder = function() {
+  // نضيف بيانات الخصم لـ msg قبل الإرسال
+  const _origSub = cart.reduce((s,x) => s + x.price * x.qty, 0);
+  const _origDiscount = getCouponDiscount(_origSub);
+  if (_origDiscount > 0 && activeCoupon) {
+    window._pendingCoupon = { code: activeCoupon.code, discount: _origDiscount, type: activeCoupon.type, value: activeCoupon.value };
+  } else {
+    window._pendingCoupon = null;
+  }
+  _origSubmitOrder();
+};
+
+// تتبع استخدام الكوبون في Firebase
+async function recordCouponUse(code) {
+  try {
+    const ref = _db.collection('coupons').where('code','==',code);
+    const snap = await ref.get();
+    if (!snap.empty) {
+      await snap.docs[0].ref.update({ usedCount: firebase.firestore.FieldValue.increment(1) });
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// 📊 تتبع الزيارات والإحصاءات
+// ══════════════════════════════════════════════════════════════
+(async function trackVisit() {
+  try {
+    // تحديد المصدر (referrer)
+    const ref = document.referrer;
+    let source = 'direct';
+    if (ref.includes('google')) source = 'google';
+    else if (ref.includes('facebook') || ref.includes('fb.')) source = 'facebook';
+    else if (ref.includes('instagram')) source = 'instagram';
+    else if (ref.includes('snapchat')) source = 'snapchat';
+    else if (ref.includes('whatsapp')) source = 'whatsapp';
+    else if (ref.includes('tiktok')) source = 'tiktok';
+    else if (ref) source = 'other';
+
+    const params = new URLSearchParams(window.location.search);
+    const utm = params.get('utm_source') || params.get('ref') || null;
+    if (utm) source = utm;
+
+    // الصفحة المفتوحة
+    const page = window.location.pathname || '/';
+
+    await _db.collection('analytics').add({
+      type: 'pageview',
+      source,
+      page,
+      referrer: ref || '',
+      userAgent: navigator.userAgent.substring(0, 100),
+      isMobile: /Mobi|Android|iPhone/i.test(navigator.userAgent),
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      date: new Date().toISOString().split('T')[0],
+    });
+  } catch(e) {}
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 👥 حفظ بيانات العميل عند إتمام الطلب
+// ══════════════════════════════════════════════════════════════
+async function saveCustomerData(orderData) {
+  try {
+    const phone = orderData.phone;
+    const custRef = _db.collection('customers').doc(phone.replace(/[^0-9]/g,''));
+    const existing = await custRef.get();
+
+    const couponInfo = window._pendingCoupon ? {
+      lastCoupon: window._pendingCoupon.code,
+      lastDiscount: window._pendingCoupon.discount
+    } : {};
+
+    if (existing.exists) {
+      await custRef.update({
+        name: orderData.name,
+        phone: orderData.phone,
+        gov: orderData.gov,
+        city: orderData.city,
+        address: orderData.address || '',
+        totalOrders: firebase.firestore.FieldValue.increment(1),
+        totalSpent: firebase.firestore.FieldValue.increment(orderData.total),
+        lastOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
+        ...couponInfo
+      });
+    } else {
+      await custRef.set({
+        name: orderData.name,
+        phone: orderData.phone,
+        gov: orderData.gov,
+        city: orderData.city,
+        address: orderData.address || '',
+        totalOrders: 1,
+        totalSpent: orderData.total,
+        firstOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
+        lastOrderDate: firebase.firestore.FieldValue.serverTimestamp(),
+        ...couponInfo
+      });
+    }
+
+    if (window._pendingCoupon) await recordCouponUse(window._pendingCoupon.code);
+  } catch(e) { console.log('Customer save error:', e.message); }
+}
 
 // ══════════════════════════════════════════════════════════════
 // 🏪 نظام الطلب بسعر الجملة
