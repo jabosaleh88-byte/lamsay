@@ -757,8 +757,8 @@ let _db, _auth, _fbReady = false;
 try {
   if (!firebase.apps.length) firebase.initializeApp(_FB);
   // Enable offline persistence (Feature 6: Performance)
-  _db = firebase.firestore();
-  _try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
+  db = firebase.firestore();
+  try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
   _auth = firebase.auth();
   _fbReady = true;
 } catch(e) { console.log('Firebase init:', e.message); }
