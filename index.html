@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+h<!DOCTYPE html>
 <html lang="ar" dir="rtl" id="root">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximhum-scale=1">
 <title>lamsay — متجر لمسة الأردن</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -1269,7 +1269,7 @@ function submitOrder() {
   };
   const orders = JSON.parse(localStorage.getItem('lamsay_orders') || '[]');
   orders.unshift(order);
-  localStorage.setItem('lamsay_orders', JSON.stringify(orders));
+  localStorage.setItem('lamsay_orders', JSON.stringify(orders));saveOrderToFirebase(order);
 
   closeCheckout();
 
