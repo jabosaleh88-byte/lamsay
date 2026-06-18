@@ -301,6 +301,43 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 .success-wa-btn:hover{background:#1ebd5a}
 .success-close-btn{width:100%;background:var(--dark3);color:var(--gl);border-radius:var(--r);padding:12px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--dark4)}
 
+/* ── WHOLESALE MODAL ── */
+.wholesale-btn{flex:1;background:transparent;color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r);padding:10px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;cursor:pointer}
+.wholesale-btn:hover{background:rgba(91,138,240,.12);border-color:#4a7fd4}
+.wholesale-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:700;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:20px}
+.wholesale-modal-bg.open{display:flex}
+.wholesale-box{background:var(--dark2);border:1px solid rgba(91,138,240,.35);border-radius:var(--rl);width:100%;max-width:460px;overflow:hidden}
+.wholesale-hd{background:linear-gradient(120deg,#1a2a4a,#1e3060);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.wholesale-hd-title{font-size:16px;font-weight:800;color:var(--w);display:flex;align-items:center;gap:9px}
+.wholesale-hd-title span{background:rgba(91,138,240,.25);border:1px solid rgba(91,138,240,.4);color:#7aa8ff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.5px}
+.wholesale-close{color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;transition:color .15s}
+.wholesale-close:hover{color:var(--w)}
+.wholesale-body{padding:22px 24px}
+.wholesale-prod-info{display:flex;align-items:center;gap:14px;background:var(--dark3);border-radius:var(--r);padding:14px;margin-bottom:20px;border:1px solid var(--dark4)}
+.wholesale-prod-img{width:52px;height:52px;border-radius:8px;background:var(--dark4);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden}
+.wholesale-prod-img img{width:100%;height:100%;object-fit:cover}
+.wholesale-prod-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.wholesale-prod-brand{font-size:11px;color:var(--gold);font-weight:600}
+.wholesale-note{background:rgba(91,138,240,.07);border:1px solid rgba(91,138,240,.2);border-radius:var(--r);padding:13px 15px;margin-bottom:18px;font-size:12px;color:var(--gl);line-height:1.7}
+.wholesale-note strong{color:#7aa8ff;display:block;margin-bottom:5px;font-size:13px}
+.wholesale-qty-wrap{margin-bottom:18px}
+.wholesale-qty-label{font-size:12px;font-weight:700;color:var(--gl);margin-bottom:10px;display:block}
+.wholesale-qty-ctrl{display:flex;align-items:center;gap:14px}
+.wholesale-qty-btn{width:38px;height:38px;border:1.5px solid var(--dark4);border-radius:8px;background:var(--dark3);color:var(--w);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.wholesale-qty-btn:hover{border-color:var(--blue);color:#7aa8ff;background:rgba(91,138,240,.1)}
+.wholesale-qty-input{flex:1;background:var(--dark3);border:1.5px solid var(--dark4);border-radius:8px;padding:10px 14px;font-size:18px;font-weight:700;color:var(--w);text-align:center;outline:none;transition:border-color .15s}
+.wholesale-qty-input:focus{border-color:var(--blue)}
+.wholesale-items-list{margin-bottom:16px}
+.wholesale-items-title{font-size:12px;font-weight:700;color:var(--gl);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.wholesale-add-item{background:rgba(91,138,240,.08);border:1px dashed rgba(91,138,240,.3);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px;cursor:pointer;transition:all .15s}
+.wholesale-add-item:hover{background:rgba(91,138,240,.15)}
+.wholesale-item-row{display:flex;align-items:center;justify-content:space-between;background:var(--dark3);border:1px solid var(--dark4);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:13px}
+.wholesale-item-rm{color:var(--g);cursor:pointer;font-size:16px;transition:color .15s}
+.wholesale-item-rm:hover{color:var(--red)}
+.wholesale-send-btn{width:100%;background:linear-gradient(135deg,#25a65b,#1d8a4c);color:var(--w);border-radius:var(--r);padding:14px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;border:none;transition:all .15s}
+.wholesale-send-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,166,91,.3)}
+.wholesale-send-btn:disabled{background:var(--dark3);color:var(--g);cursor:not-allowed;transform:none;box-shadow:none}
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
   .navbar{padding:0 14px;gap:10px}
@@ -647,10 +684,60 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
       </div>
       <div class="prod-modal-actions">
         <button class="prod-modal-add" id="pm-add-btn"><i class="ti ti-shopping-cart-plus"></i> أضف للسلة</button>
+        <button class="wholesale-btn" id="pm-wholesale-btn" style="min-width:120px;padding:14px 12px;font-size:12px" onclick="openWholesaleFromModal()"><i class="ti ti-building-store"></i> طلب بالجملة</button>
         <div class="prod-modal-close" onclick="closeProdModal()"><i class="ti ti-x"></i></div>
       </div>
     </div>
   </div>
+</div>
+
+<!-- WHOLESALE MODAL -->
+<div class="wholesale-modal-bg" id="wholesale-modal">
+<div class="wholesale-box">
+  <div class="wholesale-hd">
+    <div class="wholesale-hd-title">
+      <i class="ti ti-building-store" style="color:#7aa8ff"></i>
+      طلب سعر الجملة
+      <span>WHOLESALE</span>
+    </div>
+    <i class="ti ti-x wholesale-close" onclick="closeWholesale()"></i>
+  </div>
+  <div class="wholesale-body">
+    <div class="wholesale-prod-info" id="wh-prod-info">
+      <div class="wholesale-prod-img" id="wh-prod-img"></div>
+      <div>
+        <div class="wholesale-prod-name" id="wh-prod-name"></div>
+        <div class="wholesale-prod-brand" id="wh-prod-brand"></div>
+      </div>
+    </div>
+    <div class="wholesale-note">
+      <strong><i class="ti ti-info-circle"></i> كيف يعمل سعر الجملة؟</strong>
+      حدد الكمية المطلوبة وأرسل طلبك — سنتواصل معك عبر الواتساب ونرسل لك سعر الجملة الخاص خلال دقائق.
+    </div>
+    <!-- قائمة الأصناف -->
+    <div class="wholesale-items-list">
+      <div class="wholesale-items-title">
+        <span id="wh-items-count">📦 صنف واحد مختار</span>
+        <span id="wh-add-more" onclick="addWholesaleItem()" style="color:var(--blue);cursor:pointer;font-size:12px;font-weight:700"><i class="ti ti-plus"></i> أضف صنف آخر</span>
+      </div>
+      <div id="wh-items-container"></div>
+    </div>
+    <!-- حقل الاسم والهاتف -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--gl);display:block;margin-bottom:5px">الاسم *</label>
+        <input type="text" id="wh-name" class="form-input" placeholder="اسمك الكريم" style="padding:9px 12px;font-size:13px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--gl);display:block;margin-bottom:5px">الهاتف *</label>
+        <input type="tel" id="wh-phone" class="form-input" placeholder="07XXXXXXXX" style="padding:9px 12px;font-size:13px">
+      </div>
+    </div>
+    <button class="wholesale-send-btn" id="wh-send-btn" onclick="sendWholesaleOrder()">
+      <i class="ti ti-brand-whatsapp"></i> أرسل طلب الجملة عبر الواتساب
+    </button>
+  </div>
+</div>
 </div>
 
 <!-- SUCCESS MODAL -->
@@ -907,6 +994,7 @@ function renderProds() {
             ? `<button class="add-btn" onclick="addCart('${p.id}')"><i class="ti ti-shopping-cart-plus"></i> ${isAr?'أضف للسلة':'Add to Cart'}</button>`
             : `<button class="out-btn">نفذ المخزون</button>`
           }
+          <button class="wholesale-btn" onclick="event.stopPropagation();openWholesale('${p.id}')" title="${isAr?'طلب بسعر الجملة':'Wholesale Order'}"><i class="ti ti-building-store"></i></button>
         </div>
       </div>
     </div>`;
@@ -1219,6 +1307,176 @@ function toast(msg) {
 // 🚀 تشغيل
 // ══════════════════════════════════════════════════════════════
 renderCats();
+
+// ══════════════════════════════════════════════════════════════
+// 🏪 نظام الطلب بسعر الجملة
+// ══════════════════════════════════════════════════════════════
+let wholesaleItems = []; // [{id, name, brand, emoji, img, qty}]
+let _currentWholesaleId = null;
+
+function openWholesale(productId) {
+  const p = PRODUCTS.find(x => x.id === productId);
+  if (!p) return;
+  _currentWholesaleId = productId;
+  wholesaleItems = [{ id: p.id, name: isAr ? p.nameAr : p.nameEn, brand: isAr ? p.brandAr : p.brandEn, emoji: p.emoji, img: p.img, qty: 1 }];
+  renderWholesaleItems();
+  // عرض صورة/ايموجي المنتج
+  const imgEl = document.getElementById('wh-prod-img');
+  imgEl.innerHTML = p.img ? `<img src="${p.img}" alt="">` : p.emoji;
+  document.getElementById('wh-prod-name').textContent = isAr ? p.nameAr : p.nameEn;
+  document.getElementById('wh-prod-brand').textContent = isAr ? p.brandAr : p.brandEn;
+  document.getElementById('wh-name').value = '';
+  document.getElementById('wh-phone').value = '';
+  document.getElementById('wholesale-modal').classList.add('open');
+}
+
+function openWholesaleFromModal() {
+  const addBtn = document.getElementById('pm-add-btn');
+  const addOnclick = addBtn ? addBtn.getAttribute('onclick') : '';
+  // استخراج ID من onclick مثل: addCart('ID')
+  const match = addOnclick ? addOnclick.match(/addCart\('([^']+)'\)/) : null;
+  if (match) {
+    closeProdModal();
+    openWholesale(match[1]);
+  }
+}
+
+function renderWholesaleItems() {
+  const container = document.getElementById('wh-items-container');
+  const countEl = document.getElementById('wh-items-count');
+  if (!container) return;
+  countEl.textContent = wholesaleItems.length === 1 ? '📦 صنف واحد مختار' : `📦 ${wholesaleItems.length} أصناف مختارة`;
+  container.innerHTML = wholesaleItems.map((item, i) => `
+    <div class="wholesale-item-row">
+      <div style="display:flex;align-items:center;gap:9px;flex:1">
+        <div style="width:32px;height:32px;border-radius:6px;background:var(--dark4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden">
+          ${item.img ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover">` : item.emoji}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
+          <div style="font-size:10px;color:var(--gold)">${item.brand}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div class="wholesale-qty-btn" style="width:28px;height:28px;font-size:15px" onclick="changeWholesaleQty(${i},-1)">−</div>
+        <span style="font-size:14px;font-weight:700;min-width:24px;text-align:center">${item.qty}</span>
+        <div class="wholesale-qty-btn" style="width:28px;height:28px;font-size:15px" onclick="changeWholesaleQty(${i},1)">+</div>
+        ${wholesaleItems.length > 1 ? `<i class="ti ti-trash wholesale-item-rm" onclick="removeWholesaleItem(${i})"></i>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeWholesaleQty(index, delta) {
+  if (!wholesaleItems[index]) return;
+  wholesaleItems[index].qty = Math.max(1, wholesaleItems[index].qty + delta);
+  renderWholesaleItems();
+}
+
+function removeWholesaleItem(index) {
+  wholesaleItems.splice(index, 1);
+  renderWholesaleItems();
+}
+
+function addWholesaleItem() {
+  // فتح قائمة منتقي صنف جديد
+  const selector = document.createElement('div');
+  selector.id = 'wh-selector-overlay';
+  selector.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px';
+  selector.innerHTML = `
+    <div style="background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--rl);width:100%;max-width:420px;max-height:70vh;display:flex;flex-direction:column">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--dark4);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <span style="font-size:14px;font-weight:700">اختر صنفاً للإضافة</span>
+        <i class="ti ti-x" style="cursor:pointer;font-size:19px;color:var(--g)" onclick="document.getElementById('wh-selector-overlay').remove()"></i>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--dark4);flex-shrink:0">
+        <input id="wh-search" type="text" class="form-input" placeholder="ابحث عن منتج..." style="padding:8px 12px;font-size:13px" oninput="filterWholesaleSelector(this.value)">
+      </div>
+      <div id="wh-selector-list" style="overflow-y:auto;padding:8px"></div>
+    </div>
+  `;
+  document.body.appendChild(selector);
+  filterWholesaleSelector('');
+  selector.addEventListener('click', e => { if(e.target === selector) selector.remove(); });
+}
+
+function filterWholesaleSelector(q) {
+  const list = document.getElementById('wh-selector-list');
+  if (!list) return;
+  const filtered = PRODUCTS.filter(p => p.stock > 0 && (
+    (isAr ? p.nameAr : p.nameEn).toLowerCase().includes(q.toLowerCase()) ||
+    (isAr ? p.brandAr : p.brandEn).toLowerCase().includes(q.toLowerCase())
+  )).slice(0, 20);
+  list.innerHTML = filtered.map(p => `
+    <div onclick="selectWholesaleProduct('${p.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(201,168,76,.07)'" onmouseout="this.style.background=''">
+      <div style="width:38px;height:38px;border-radius:7px;background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden">
+        ${p.img ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover">` : p.emoji}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${isAr ? p.nameAr : p.nameEn}</div>
+        <div style="font-size:11px;color:var(--gold)">${isAr ? p.brandAr : p.brandEn}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="text-align:center;padding:24px;color:var(--g)">لا نتائج</div>';
+}
+
+function selectWholesaleProduct(productId) {
+  const p = PRODUCTS.find(x => x.id === productId);
+  if (!p) return;
+  // تحقق من عدم وجوده مسبقاً
+  const exists = wholesaleItems.find(x => x.id === productId);
+  if (exists) { exists.qty++; }
+  else {
+    wholesaleItems.push({ id: p.id, name: isAr ? p.nameAr : p.nameEn, brand: isAr ? p.brandAr : p.brandEn, emoji: p.emoji, img: p.img, qty: 1 });
+  }
+  const overlay = document.getElementById('wh-selector-overlay');
+  if (overlay) overlay.remove();
+  renderWholesaleItems();
+}
+
+function sendWholesaleOrder() {
+  const name = document.getElementById('wh-name').value.trim();
+  const phone = document.getElementById('wh-phone').value.trim();
+  if (!name || !phone) { toast('⚠️ يرجى إدخال الاسم ورقم الهاتف'); return; }
+  if (!/^07[789]\d{7}$/.test(phone) && !/^\+9627[789]\d{7}$/.test(phone)) {
+    toast('⚠️ رقم الهاتف غير صحيح — يجب أن يبدأ بـ 07');
+    return;
+  }
+  if (wholesaleItems.length === 0) { toast('⚠️ أضف صنفاً واحداً على الأقل'); return; }
+
+  let msg = `🏪 *طلب سعر جملة — ${CONFIG.STORE_NAME}*\n`;
+  msg += `${'─'.repeat(30)}\n\n`;
+  msg += `👤 *بيانات العميل:*\n`;
+  msg += `• الاسم: ${name}\n`;
+  msg += `• الهاتف: ${phone}\n\n`;
+  msg += `📦 *الأصناف المطلوبة:*\n`;
+  wholesaleItems.forEach(item => {
+    msg += `• ${item.name} — الكمية: ${item.qty} قطعة\n`;
+  });
+  msg += `\n💬 *ملاحظة:* يرجى إرسال سعر الجملة الخاص بهذا الطلب.\n`;
+  msg += `\n${'─'.repeat(30)}\n`;
+  msg += `⏰ ${new Date().toLocaleString('ar-JO')}`;
+
+  const waPhone = CONFIG.WHATSAPP.replace(/[^0-9]/g, '');
+  const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+
+  const waLink = document.createElement('a');
+  waLink.href = waUrl;
+  waLink.target = '_blank';
+  waLink.rel = 'noopener noreferrer';
+  document.body.appendChild(waLink);
+  waLink.click();
+  document.body.removeChild(waLink);
+
+  closeWholesale();
+  toast('✅ تم إرسال طلب الجملة بنجاح!');
+}
+
+function closeWholesale() {
+  document.getElementById('wholesale-modal').classList.remove('open');
+  wholesaleItems = [];
+  _currentWholesaleId = null;
+}
 
 // تحميل روابط السوشيال
 try {
