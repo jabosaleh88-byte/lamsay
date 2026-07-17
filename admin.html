@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<script>
-/* lamsay-login-fix-v3 */
-window.doLogin=function(){var i=document.getElementById('login-pass'),e=document.getElementById('login-err'),p=localStorage.getItem('lamsay_admin_pass')||'lamsay2025';if(i&&i.value===p){sessionStorage.setItem('lamsay_logged','yes');var s=document.getElementById('login-screen');if(s)s.style.display='none';if(e)e.style.display='none';}else{if(e){e.style.display='block';e.textContent='❌ كلمة المرور غير صحيحة';}if(i){i.value='';i.focus();}}};
-window.doLogout=function(){sessionStorage.removeItem('lamsay_logged');location.reload();};
-document.addEventListener('DOMContentLoaded',function(){var b=document.querySelector('#login-screen button');if(sessionStorage.getItem('lamsay_logged')==='yes'){var ls=document.getElementById('login-screen');if(ls)ls.style.display='none';}if(b)b.onclick=window.doLogin;var i=document.getElementById('login-pass');if(i)i.onkeydown=function(e){if(e.key==='Enter')window.doLogin();};});
-</script>
 <meta charset="UTF-8">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="X-Frame-Options" content="DENY">
@@ -22,44 +16,80 @@ document.addEventListener('DOMContentLoaded',function(){var b=document.querySele
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 (function(){document.addEventListener('DOMContentLoaded',function(){var mc=document.getElementById('admin-main-content');if(mc)mc.style.display='none';});})();
-const ADMIN_EMAILS=['jabosaleh88@gmail.com','lamsay2026@gmail.com','admin@lamsay.com'];
+let _adminAuthStarted = false;
+let _adminAuthorized = false;
+
+async function verifyAdminUser(user){
+  if(!user || !db) return false;
+  const snap = await db.collection('admins').doc(user.uid).get();
+  if(!snap.exists) return false;
+  const data = snap.data() || {};
+  return data.active === true && data.role === 'admin';
+}
+
+function setAdminView(authorized, message){
+  const mc=document.getElementById('admin-main-content');
+  const ov=document.getElementById('admin-auth-overlay');
+  const btn=document.getElementById('admin-login-btn');
+  _adminAuthorized = authorized;
+  if(authorized){
+    if(mc){mc.style.display='flex';mc.style.flex='1';}
+    if(ov)ov.style.display='none';
+    if(btn){btn.disabled=false;btn.textContent='دخول';}
+  }else{
+    if(mc)mc.style.display='none';
+    if(ov)ov.style.display='flex';
+    if(btn){btn.disabled=false;btn.textContent='دخول';}
+    if(message)showAdminLoginErr(message);
+  }
+}
+
 function checkAdminAuth(){
-  firebase.auth().onAuthStateChanged(function(user){
-    var mc=document.getElementById('admin-main-content');
-    var ov=document.getElementById('admin-auth-overlay');
-    if(user && ADMIN_EMAILS.includes(user.email)){
-      if(mc)mc.style.display='flex';
-      if(mc)mc.style.flex='1';
-      if(ov)ov.style.display='none';
-      var el=document.getElementById('admin-logged-name');
-      if(el)el.textContent=user.displayName||user.email;
-    } else if(user){
-      firebase.auth().signOut();
-      showAdminLoginErr('هذا الحساب ليس لديه صلاحية الإدارة');
-    } else {
-      if(mc)mc.style.display='none';
-      if(ov)ov.style.display='flex';
+  if(_adminAuthStarted || !firebase.apps.length) return;
+  _adminAuthStarted = true;
+  firebase.auth().onAuthStateChanged(async function(user){
+    try{
+      if(!user){ setAdminView(false); return; }
+      const allowed = await verifyAdminUser(user);
+      if(!allowed){
+        await firebase.auth().signOut();
+        setAdminView(false,'هذا الحساب ليس لديه صلاحية الإدارة');
+        return;
+      }
+      setAdminView(true);
+      const el=document.getElementById('admin-logged-name');
+      if(el)el.textContent=user.displayName||user.email||'مدير';
+      if(typeof startListeners === 'function') startListeners();
+    }catch(err){
+      console.error('Admin authorization failed:',err);
+      setAdminView(false,'تعذر التحقق من صلاحية الإدارة');
     }
   });
 }
+
 async function doAdminLogin(){
-  var em=(document.getElementById('admin-login-email')||{}).value||'';
-  var pw=(document.getElementById('admin-login-pass')||{}).value||'';
+  const em=((document.getElementById('admin-login-email')||{}).value||'').trim();
+  const pw=(document.getElementById('admin-login-pass')||{}).value||'';
   if(!em||!pw){showAdminLoginErr('يرجى تعبئة الحقول');return;}
+  const btn=document.getElementById('admin-login-btn');
   try{
-    var btn=document.getElementById('admin-login-btn');
     if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول...';}
-    await firebase.auth().signInWithEmailAndPassword(em,pw);
+    const cred=await firebase.auth().signInWithEmailAndPassword(em,pw);
+    const allowed=await verifyAdminUser(cred.user);
+    if(!allowed){
+      await firebase.auth().signOut();
+      throw new Error('NOT_ADMIN');
+    }
   }catch(e){
-    var m={'auth/wrong-password':'كلمة المرور غير صحيحة','auth/user-not-found':'البريد غير مسجّل','auth/too-many-requests':'محاولات كثيرة','auth/invalid-credential':'بيانات غير صحيحة'};
-    showAdminLoginErr(m[e.code]||'خطأ: '+e.message);
-    var btn2=document.getElementById('admin-login-btn');
-    if(btn2){btn2.disabled=false;btn2.textContent='دخول';}
+    const m={'auth/wrong-password':'كلمة المرور غير صحيحة','auth/user-not-found':'البريد غير مسجّل','auth/too-many-requests':'محاولات كثيرة، حاول لاحقًا','auth/invalid-credential':'بيانات الدخول غير صحيحة'};
+    showAdminLoginErr(e.message==='NOT_ADMIN'?'هذا الحساب ليس لديه صلاحية الإدارة':(m[e.code]||'تعذر تسجيل الدخول'));
+    if(btn){btn.disabled=false;btn.textContent='دخول';}
   }
 }
-function showAdminLoginErr(msg){var el=document.getElementById('admin-login-error');if(el){el.textContent=msg;el.style.display='block';}}
-async function doAdminLogout(){await firebase.auth().signOut();}
-document.addEventListener('DOMContentLoaded',function(){setTimeout(checkAdminAuth,400);});
+function showAdminLoginErr(msg){const el=document.getElementById('admin-login-error');if(el){el.textContent=msg;el.style.display='block';}}
+async function doAdminLogout(){await firebase.auth().signOut();location.reload();}
+window.doLogout=doAdminLogout;
+document.addEventListener('DOMContentLoaded',function(){setTimeout(checkAdminAuth,150);});
 </script>
 
 <style>
@@ -644,7 +674,10 @@ const ST = {new:{l:'جديد',c:'s-new'},pending:{l:'معلق',c:'s-pending'},co
 // ════════════════════════════════════════════════
 // LOAD FROM FIREBASE
 // ════════════════════════════════════════════════
+let _listenersStarted = false;
 function startListeners() {
+  if (_listenersStarted || !_adminAuthorized) return;
+  _listenersStarted = true;
   if (!fbReady) { setTimeout(hideLoading, 1000); return; }
   db.collection('products').onSnapshot(snap => {
     PRODUCTS = snap.docs.map(d => ({...d.data(), _id: d.id}));
@@ -1025,19 +1058,27 @@ function toast(msg) { const el=document.getElementById('toast'); document.getEle
 // INIT
 // ════════════════════════════════════════════════
 // CHANGE PASSWORD
-window.changePass = function() {
-  const oldPass = (document.getElementById('s-pass-old')||{}).value;
-  const newPass = (document.getElementById('s-pass-new')||{}).value;
-  const confirm = (document.getElementById('s-pass-confirm')||{}).value;
-  const current = localStorage.getItem('lamsay_admin_pass') || 'lamsay2025';
-  if (oldPass !== current) { toast('❌ كلمة المرور الحالية غير صحيحة'); return; }
-  if (!newPass || newPass.length < 4) { toast('⚠️ كلمة المرور يجب أن تكون 4 أحرف على الأقل'); return; }
+window.changePass = async function() {
+  const oldPass = (document.getElementById('s-pass-old')||{}).value || '';
+  const newPass = (document.getElementById('s-pass-new')||{}).value || '';
+  const confirm = (document.getElementById('s-pass-confirm')||{}).value || '';
+  const user = firebase.auth().currentUser;
+  if (!user || !user.email) { toast('❌ يجب تسجيل الدخول أولًا'); return; }
+  if (!oldPass) { toast('⚠️ أدخل كلمة المرور الحالية'); return; }
+  if (newPass.length < 8) { toast('⚠️ كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل'); return; }
   if (newPass !== confirm) { toast('⚠️ كلمة المرور الجديدة غير متطابقة'); return; }
-  localStorage.setItem('lamsay_admin_pass', newPass);
-  document.getElementById('s-pass-old').value = '';
-  document.getElementById('s-pass-new').value = '';
-  document.getElementById('s-pass-confirm').value = '';
-  toast('✅ تم تغيير كلمة المرور بنجاح');
+  try {
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPass);
+    ['s-pass-old','s-pass-new','s-pass-confirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    toast('✅ تم تغيير كلمة المرور عبر Firebase');
+  } catch (e) {
+    const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+      ? '❌ كلمة المرور الحالية غير صحيحة'
+      : '❌ تعذر تغيير كلمة المرور';
+    toast(msg);
+  }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1045,45 +1086,11 @@ document.addEventListener('DOMContentLoaded', function() {
   renderOverview();
   document.getElementById('fb-st').className = fbReady ? 'fb-st' : 'fb-st off';
   document.getElementById('fb-st').innerHTML = fbReady ? '<i class="ti ti-cloud" style="font-size:14px"></i> متصل بـ Firebase' : '<i class="ti ti-cloud-off" style="font-size:14px"></i> غير متصل';
-  startListeners();
+  checkAdminAuth();
 });
 </script>
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen" style="position:fixed;inset:0;background:#090909;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:'Cairo',sans-serif">
-  <div style="background:#1A1A1A;border:1px solid #2a2a2a;border-radius:16px;padding:40px;width:100%;max-width:380px;text-align:center">
-    <div style="font-size:32px;font-weight:800;color:#C9A84C;margin-bottom:4px">lamsay</div>
-    <div style="font-size:12px;color:#666;letter-spacing:2px;margin-bottom:32px">لوحة التحكم</div>
-    <div style="font-size:22px;margin-bottom:24px">🔐</div>
-    <div style="margin-bottom:14px;text-align:right">
-      <label style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px">كلمة المرور</label>
-      <input type="password" id="login-pass" placeholder="أدخل كلمة المرور" 
-        style="width:100%;background:#222;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;font-size:14px;color:#fff;font-family:'Cairo',sans-serif;outline:none;transition:border-color .15s"
-        onkeydown="if(event.key==='Enter')doLogin()"
-        onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#2a2a2a'">
-    </div>
-    <div id="login-err" style="font-size:12px;color:#e05555;margin-bottom:14px;display:none;background:rgba(224,85,85,.1);border-radius:8px;padding:8px">❌ كلمة المرور غير صحيحة</div>
-    <script>
-function doLogin() {
-  var input = document.getElementById("login-pass");
-  var err = document.getElementById("login-err");
-  var pass = localStorage.getItem("lamsay_admin_pass") || "lamsay2025";
-  if (input && input.value === pass) {
-    sessionStorage.setItem("lamsay_logged", "yes");
-    document.getElementById("login-screen").style.display = "none";
-    if(err) err.style.display = "none";
-  } else {
-    if(err) { err.style.display = "block"; err.textContent = "❌ كلمة المرور غير صحيحة"; }
-    if(input) input.value = "";
-    if(input) input.focus();
-  }
-}
-function doLogout() {
-  sessionStorage.removeItem("lamsay_logged");
-  location.reload();
-}
-
-
+<script>
 // ════════════════════════════════════════════
 // 📊 تحليلات الموقع
 // ════════════════════════════════════════════
