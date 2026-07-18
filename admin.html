@@ -381,7 +381,7 @@ input,select,textarea{font-family:inherit}
     <div class="sb-sec">الإعدادات</div>
     <div class="sb-item" onclick="showTab('settings',this)"><i class="ti ti-settings"></i> الإعدادات</div>
     <div class="sb-item" onclick="window.open('index.html','_blank')"><i class="ti ti-external-link"></i> معاينة الموقع</div>
-    <div class="sb-item" onclick="window.open('app.html','_blank')"><i class="ti ti-device-mobile"></i> معاينة التطبيق</div>
+    <div class="sb-item" onclick="openAppPreview()"><i class="ti ti-device-mobile"></i> معاينة التطبيق</div>
   </nav>
   <div class="sb-foot">
     <div class="sb-user">
@@ -425,6 +425,7 @@ input,select,textarea{font-family:inherit}
         <select class="f-sel" onchange="filterPCat(this.value)">
           <option value="all">كل الفئات</option><option value="beauty">جمال</option><option value="skincare">بشرة</option><option value="hair">شعر</option><option value="body">جسم</option><option value="perfume">عطور</option><option value="fashion">أزياء</option><option value="spices">بهارات</option><option value="food">تغذية</option><option value="misc">متنوعة</option><option value="trending">تريند</option>
         </select>
+        <div class="tb-btn" onclick="exportProductsCSV()"><i class="ti ti-file-spreadsheet"></i> تصدير المنتجات</div>
         <div class="tb-btn primary" onclick="openAddProd()"><i class="ti ti-plus"></i> إضافة منتج</div>
       </div>
       <div class="tw"><table class="tbl"><thead><tr><th>المنتج</th><th>الفئة</th><th>السعر</th><th>المخزون</th><th>ظاهر</th><th>الإجراءات</th></tr></thead><tbody id="prods-tbody"></tbody></table></div>
@@ -1822,5 +1823,170 @@ if (localStorage.getItem('lamsay_auto_report') === '1') {
 </script>
 
 </div><!-- /admin-main-content -->
+
+<script>
+/* lamsay-admin-fixes-v2: exports, customers, Q&A answers, app preview */
+(function(){
+  function csvEscape(value){
+    if (value === null || value === undefined) value = '';
+    if (value && typeof value.toDate === 'function') value = value.toDate().toLocaleString('ar-JO');
+    else if (value instanceof Date) value = value.toLocaleString('ar-JO');
+    else if (typeof value === 'object') {
+      try { value = JSON.stringify(value); } catch (_) { value = String(value); }
+    }
+    return '"' + String(value).replace(/"/g,'""') + '"';
+  }
+  function downloadCSV(filename, headers, rows){
+    const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function first(obj, keys, fallback=''){
+    for (const key of keys) if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== '') return obj[key];
+    return fallback;
+  }
+  function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+  function dateValue(v){
+    if (!v) return '';
+    try {
+      const d = typeof v.toDate === 'function' ? v.toDate() : new Date(v);
+      return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString('ar-JO');
+    } catch (_) { return String(v); }
+  }
+
+  window.exportProductsCSV = function(){
+    const products = Array.isArray(window.PRODUCTS) ? window.PRODUCTS : (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []);
+    if (!products.length) { toast('لا توجد منتجات للتصدير'); return; }
+    const headers = ['المعرف','الاسم العربي','الاسم الإنجليزي','الماركة عربي','الماركة إنجليزي','الفئة','السعر','السعر السابق','نسبة الخصم','المخزون','ظاهر','الوصف العربي','الوصف الإنجليزي','الصورة','الأيقونة','تاريخ الإنشاء','آخر تحديث'];
+    const rows = products.map(p => {
+      const price=num(first(p,['price','salePrice']));
+      const oldPrice=num(first(p,['oldPrice','old_price','regularPrice']));
+      const discount=oldPrice>0 ? Math.round((1-price/oldPrice)*100) : 0;
+      return [
+        first(p,['_id','id']), first(p,['nameAr','name_ar','name']), first(p,['nameEn','name_en']),
+        first(p,['brandAr','brand_ar','brand']), first(p,['brandEn','brand_en']), first(p,['cat','category']),
+        price.toFixed(2), oldPrice ? oldPrice.toFixed(2) : '', discount ? discount+'%' : '',
+        num(first(p,['stock','quantity'])), first(p,['visible','active','is_active'],true) ? 'نعم' : 'لا',
+        first(p,['descAr','descriptionAr','description_ar','description']), first(p,['descEn','descriptionEn','description_en']),
+        first(p,['img','image','imageUrl','image_url']), first(p,['emoji']), dateValue(first(p,['createdAt','created_at'])), dateValue(first(p,['updatedAt','updated_at']))
+      ];
+    });
+    downloadCSV('lamsay-products-'+new Date().toISOString().slice(0,10)+'.csv', headers, rows);
+    toast('✅ تم تصدير جميع بيانات المنتجات');
+  };
+
+  async function collectCompleteCustomers(){
+    const [usersResult, customersResult, ordersResult] = await Promise.allSettled([
+      db.collection('users').get(), db.collection('customers').get(), db.collection('orders').get()
+    ]);
+    const users = usersResult.status==='fulfilled' ? usersResult.value.docs.map(d=>({id:d.id,...d.data()})) : [];
+    const customers = customersResult.status==='fulfilled' ? customersResult.value.docs.map(d=>({id:d.id,...d.data()})) : [];
+    const orders = ordersResult.status==='fulfilled' ? ordersResult.value.docs.map(d=>({id:d.id,...d.data()})) : [];
+    const map = new Map();
+    const keyOf = c => String(first(c,['phone','phone_number','customer_phone','mobile','id'])).replace(/\D/g,'') || String(first(c,['email','uid','id']));
+    function merge(c, source){
+      const key=keyOf(c); if(!key) return;
+      const old=map.get(key)||{sources:new Set(),ordersCount:0,totalSpent:0};
+      old.sources.add(source);
+      old.id=first(c,['uid','id'],old.id||'');
+      old.name=first(c,['display_name','name','customer_name'],old.name||'');
+      old.phone=first(c,['phone_number','phone','customer_phone','mobile'],old.phone||'');
+      old.email=first(c,['email'],old.email||'');
+      old.gov=first(c,['default_province','gov','province','governorate'],old.gov||'');
+      old.city=first(c,['city','default_city'],old.city||'');
+      old.address=first(c,['default_address','address'],old.address||'');
+      old.createdAt=first(c,['created_at','createdAt','firstOrderDate'],old.createdAt||'');
+      old.lastOrder=first(c,['lastOrderDate','last_order','updatedAt'],old.lastOrder||'');
+      old.ordersCount=Math.max(old.ordersCount,num(first(c,['orders_count','ordersCount','totalOrders'])));
+      old.totalSpent=Math.max(old.totalSpent,num(first(c,['total_spent','totalSpent'])));
+      old.source=first(c,['source'],old.source||'');
+      map.set(key,old);
+    }
+    users.forEach(c=>merge(c,'users'));
+    customers.forEach(c=>merge(c,'customers'));
+    orders.forEach(o=>{
+      const temp={id:o.id,name:first(o,['name','customer_name']),phone:first(o,['phone','customer_phone']),email:o.email,gov:first(o,['gov','province','governorate']),city:o.city,address:o.address};
+      merge(temp,'orders');
+      const key=keyOf(temp); if(!key) return;
+      const c=map.get(key); c.ordersCount += 1; c.totalSpent += num(o.total); c.lastOrder=first(o,['createdAt','created_at','date'],c.lastOrder); map.set(key,c);
+    });
+    return [...map.values()].map(c=>({...c,sources:[...c.sources].join(' + ')}));
+  }
+
+  window.exportCustomersCSV = async function(){
+    try {
+      toast('⏳ جاري تجهيز بيانات العملاء الكاملة...');
+      const customers=await collectCompleteCustomers();
+      if(!customers.length){toast('لا توجد بيانات عملاء');return;}
+      const headers=['المعرف','الاسم','الهاتف','البريد الإلكتروني','المحافظة','المدينة','العنوان الكامل','عدد الطلبات','إجمالي الإنفاق','تاريخ التسجيل/أول طلب','آخر طلب','مصدر العميل','مصادر البيانات'];
+      const rows=customers.map(c=>[c.id,c.name,c.phone,c.email,c.gov,c.city,c.address,c.ordersCount,c.totalSpent.toFixed(2),dateValue(c.createdAt),dateValue(c.lastOrder),c.source,c.sources]);
+      downloadCSV('lamsay-customers-complete-'+new Date().toISOString().slice(0,10)+'.csv',headers,rows);
+      window._allCustomers=customers;
+      toast('✅ تم تصدير بيانات العملاء كاملة');
+    } catch(e){ console.error(e); toast('❌ تعذر تصدير العملاء: '+e.message); }
+  };
+
+  // Firestore serverTimestamp cannot be nested inside an arrayUnion object.
+  window.addAnswer = async function(docId){
+    const inp=document.getElementById('qa-ans-'+docId);
+    const answerText=inp ? inp.value.trim() : '';
+    if(!answerText){toast('⚠️ اكتب الإجابة أولاً');return;}
+    const btn=inp && inp.nextElementSibling;
+    try{
+      if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> جارٍ الإرسال';}
+      const user=firebase.auth().currentUser;
+      const newAnswer={
+        answer_text:answerText,
+        answered_by:(user && (user.displayName||user.email)) || 'إدارة لمسة',
+        timestamp:firebase.firestore.Timestamp.now(),
+        answerDate:new Date().toLocaleString('ar-JO')
+      };
+      await db.collection('product_questions').doc(docId).update({
+        answers:firebase.firestore.FieldValue.arrayUnion(newAnswer),
+        is_approved:true,
+        answered_at:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      inp.value=''; toast('✅ تم حفظ الإجابة وإظهارها للعملاء'); await loadQATab();
+    }catch(e){console.error('Q&A answer error:',e);toast('❌ فشل حفظ الإجابة: '+e.message);}
+    finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> إرسال الإجابة';}}
+  };
+
+  window.openAppPreview = function(){
+    let overlay=document.getElementById('app-preview-overlay');
+    if(!overlay){
+      overlay=document.createElement('div'); overlay.id='app-preview-overlay';
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;';
+      overlay.innerHTML=`<div style="width:min(430px,100%);height:min(860px,94vh);background:#111;border:1px solid #C9A84C;border-radius:22px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 70px #000">
+        <div style="height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid #2a2a2a">
+          <strong style="flex:1;color:#C9A84C">معاينة التطبيق</strong>
+          <button id="app-preview-refresh" class="tb-btn" style="padding:7px 10px"><i class="ti ti-refresh"></i></button>
+          <button id="app-preview-new" class="tb-btn" style="padding:7px 10px"><i class="ti ti-external-link"></i></button>
+          <button id="app-preview-close" class="tb-btn" style="padding:7px 10px"><i class="ti ti-x"></i></button>
+        </div>
+        <iframe id="app-preview-frame" title="معاينة تطبيق لمسة" style="width:100%;flex:1;border:0;background:white" loading="eager"></iframe>
+      </div>`;
+      document.body.appendChild(overlay);
+      overlay.querySelector('#app-preview-close').onclick=()=>overlay.remove();
+      overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+      overlay.querySelector('#app-preview-refresh').onclick=()=>{overlay.querySelector('#app-preview-frame').src='app.html?preview=1&t='+Date.now();};
+      overlay.querySelector('#app-preview-new').onclick=()=>window.open('app.html?preview=1&t='+Date.now(),'_blank','noopener');
+    }
+    overlay.querySelector('#app-preview-frame').src='app.html?preview=1&t='+Date.now();
+  };
+
+  // Make the top export button context-aware.
+  const oldExport=window.exportCSV;
+  window.exportCSV=function(){
+    const active=document.querySelector('.tab.act');
+    const id=active ? active.id : '';
+    if(id==='tab-products') return window.exportProductsCSV();
+    if(id==='tab-customers' || id==='tab-reports') return window.exportCustomersCSV();
+    return oldExport ? oldExport() : undefined;
+  };
+})();
+</script>
+
 </body>
 </html>
