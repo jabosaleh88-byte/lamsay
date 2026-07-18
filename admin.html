@@ -1334,7 +1334,7 @@ async function loadCoupons() {
           <button class="btn-sec" style="padding:5px 9px;font-size:11px;border-color:rgba(224,85,85,.3);color:var(--red)" onclick="deleteCoupon('${c.id}')">حذف</button>
         </td></tr>`;
     }).join('');
-  } catch(e) { console.log('Coupons error:', e.message); showToast('تعذر تحميل الكوبونات'); }
+  } catch(e) { console.log('Coupons error:', e.message); toast('تعذر تحميل الكوبونات'); }
 }
 function showAddCoupon(){ resetCouponForm(false); document.getElementById('coupon-form-box').style.display='block'; }
 function resetCouponForm(hide=false){
@@ -1375,8 +1375,8 @@ async function saveCoupon(){
     const data={code,type,value,minOrder,maxDiscount,usageLimit,perCustomerLimit,active,note,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     data.startsAt=start?firebase.firestore.Timestamp.fromDate(new Date(start+'T00:00:00')):null;
     data.expiresAt=exp?firebase.firestore.Timestamp.fromDate(new Date(exp+'T23:59:59')):null;
-    if(id){ await db.collection('coupons').doc(id).update(data); showToast('✅ تم تعديل الكوبون'); }
-    else { data.usedCount=0; data.createdAt=firebase.firestore.FieldValue.serverTimestamp(); await db.collection('coupons').add(data); showToast('✅ تم حفظ الكوبون'); }
+    if(id){ await db.collection('coupons').doc(id).update(data); toast('✅ تم تعديل الكوبون'); }
+    else { data.usedCount=0; data.createdAt=firebase.firestore.FieldValue.serverTimestamp(); await db.collection('coupons').add(data); toast('✅ تم حفظ الكوبون'); }
     resetCouponForm(true); loadCoupons();
   }catch(e){alert('خطأ: '+e.message);}
 }
@@ -1512,14 +1512,14 @@ function exportCustomersCSV() {
   const a = document.createElement('a'); a.href = url;
   a.download = `lamsay-customers-${new Date().toISOString().split('T')[0]}.csv`;
   a.click(); URL.revokeObjectURL(url);
-  showToast('✅ تم تصدير قاعدة العملاء');
+  toast('✅ تم تصدير قاعدة العملاء');
 }
 
 function copyCustomersText() {
   const customers = window._allCustomers || [];
-  if (!customers.length) { showToast('لا يوجد عملاء'); return; }
+  if (!customers.length) { toast('لا يوجد عملاء'); return; }
   const text = customers.map((c,i) => `${i+1}. ${c.name} | ${c.phone} | ${c.gov} ${c.city} | ${c.totalOrders} طلب`).join('\n');
-  navigator.clipboard.writeText(text).then(() => showToast('✅ تم النسخ'));
+  navigator.clipboard.writeText(text).then(() => toast('✅ تم النسخ'));
 }
 
 function toggleAutoReport(enabled) {
