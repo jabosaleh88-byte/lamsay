@@ -15,81 +15,159 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
-(function(){document.addEventListener('DOMContentLoaded',function(){var mc=document.getElementById('admin-main-content');if(mc)mc.style.display='none';});})();
-let _adminAuthStarted = false;
-let _adminAuthorized = false;
+// ════════════════════════════════════════════════
+// ADMIN AUTH — Firebase Authentication + Firestore
+// ════════════════════════════════════════════════
+(function () {
+  'use strict';
 
-async function verifyAdminUser(user){
-  if(!user || !db) return false;
-  const snap = await db.collection('admins').doc(user.uid).get();
-  if(!snap.exists) return false;
-  const data = snap.data() || {};
-  return data.active === true && data.role === 'admin';
-}
+  let authObserverStarted = false;
 
-function setAdminView(authorized, message){
-  const mc=document.getElementById('admin-main-content');
-  const ov=document.getElementById('admin-auth-overlay');
-  const btn=document.getElementById('admin-login-btn');
-  _adminAuthorized = authorized;
-  if(authorized){
-    if(mc){mc.style.display='flex';mc.style.flex='1';}
-    if(ov)ov.style.display='none';
-    if(btn){btn.disabled=false;btn.textContent='دخول';}
-  }else{
-    if(mc)mc.style.display='none';
-    if(ov)ov.style.display='flex';
-    if(btn){btn.disabled=false;btn.textContent='دخول';}
-    if(message)showAdminLoginErr(message);
+  function authElements() {
+    return {
+      overlay: document.getElementById('admin-auth-overlay'),
+      content: document.getElementById('admin-main-content'),
+      email: document.getElementById('admin-login-email'),
+      password: document.getElementById('admin-login-pass'),
+      error: document.getElementById('admin-login-error'),
+      button: document.getElementById('admin-login-btn'),
+      name: document.getElementById('admin-logged-name')
+    };
   }
-}
 
-function checkAdminAuth(){
-  if(_adminAuthStarted || !firebase.apps.length) return;
-  _adminAuthStarted = true;
-  firebase.auth().onAuthStateChanged(async function(user){
-    try{
-      if(!user){ setAdminView(false); return; }
-      const allowed = await verifyAdminUser(user);
-      if(!allowed){
+  function setLoginBusy(isBusy) {
+    const { button } = authElements();
+    if (!button) return;
+    button.disabled = isBusy;
+    button.textContent = isBusy ? 'جارٍ التحقق...' : 'دخول';
+    button.style.opacity = isBusy ? '.65' : '1';
+  }
+
+  function showLoginError(message) {
+    const { error } = authElements();
+    if (!error) return;
+    error.textContent = message;
+    error.style.display = 'block';
+  }
+
+  function clearLoginError() {
+    const { error } = authElements();
+    if (!error) return;
+    error.textContent = '';
+    error.style.display = 'none';
+  }
+
+  function showLoginScreen() {
+    const { overlay, content } = authElements();
+    if (content) content.style.display = 'none';
+    if (overlay) overlay.style.display = 'flex';
+    setLoginBusy(false);
+  }
+
+  function showAdminPanel(user, adminData) {
+    const { overlay, content, name } = authElements();
+    if (overlay) overlay.style.display = 'none';
+    if (content) {
+      content.style.display = 'flex';
+      content.style.flex = '1';
+      content.style.width = '100%';
+      content.style.minWidth = '0';
+    }
+    if (name) name.textContent = adminData.name || user.displayName || user.email || 'مدير المتجر';
+    clearLoginError();
+    setLoginBusy(false);
+    if (typeof window.startAdminApp === 'function') window.startAdminApp();
+  }
+
+  async function verifyAdmin(user) {
+    const adminDoc = await firebase.firestore().collection('admins').doc(user.uid).get();
+    if (!adminDoc.exists) return null;
+    const data = adminDoc.data() || {};
+    const role = String(data.role || '').toLowerCase();
+    if (data.active !== true || !['admin', 'owner', 'superadmin'].includes(role)) return null;
+    return data;
+  }
+
+  async function handleAuthState(user) {
+    if (!user) {
+      showLoginScreen();
+      return;
+    }
+
+    try {
+      setLoginBusy(true);
+      const adminData = await verifyAdmin(user);
+      if (!adminData) {
         await firebase.auth().signOut();
-        setAdminView(false,'هذا الحساب ليس لديه صلاحية الإدارة');
+        showLoginScreen();
+        showLoginError('هذا الحساب غير مخوّل للدخول إلى لوحة الإدارة.');
         return;
       }
-      setAdminView(true);
-      const el=document.getElementById('admin-logged-name');
-      if(el)el.textContent=user.displayName||user.email||'مدير';
-      if(typeof startListeners === 'function') startListeners();
-    }catch(err){
-      console.error('Admin authorization failed:',err);
-      setAdminView(false,'تعذر التحقق من صلاحية الإدارة');
+      showAdminPanel(user, adminData);
+    } catch (error) {
+      console.error('Admin verification failed:', error);
+      showLoginScreen();
+      showLoginError(error.code === 'permission-denied'
+        ? 'تعذّر التحقق من صلاحية الإدارة. راجع قواعد Firestore.'
+        : 'تعذّر التحقق من الحساب. حاول مرة أخرى.');
     }
-  });
-}
-
-async function doAdminLogin(){
-  const em=((document.getElementById('admin-login-email')||{}).value||'').trim();
-  const pw=(document.getElementById('admin-login-pass')||{}).value||'';
-  if(!em||!pw){showAdminLoginErr('يرجى تعبئة الحقول');return;}
-  const btn=document.getElementById('admin-login-btn');
-  try{
-    if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول...';}
-    const cred=await firebase.auth().signInWithEmailAndPassword(em,pw);
-    const allowed=await verifyAdminUser(cred.user);
-    if(!allowed){
-      await firebase.auth().signOut();
-      throw new Error('NOT_ADMIN');
-    }
-  }catch(e){
-    const m={'auth/wrong-password':'كلمة المرور غير صحيحة','auth/user-not-found':'البريد غير مسجّل','auth/too-many-requests':'محاولات كثيرة، حاول لاحقًا','auth/invalid-credential':'بيانات الدخول غير صحيحة'};
-    showAdminLoginErr(e.message==='NOT_ADMIN'?'هذا الحساب ليس لديه صلاحية الإدارة':(m[e.code]||'تعذر تسجيل الدخول'));
-    if(btn){btn.disabled=false;btn.textContent='دخول';}
   }
-}
-function showAdminLoginErr(msg){const el=document.getElementById('admin-login-error');if(el){el.textContent=msg;el.style.display='block';}}
-async function doAdminLogout(){await firebase.auth().signOut();location.reload();}
-window.doLogout=doAdminLogout;
-document.addEventListener('DOMContentLoaded',function(){setTimeout(checkAdminAuth,150);});
+
+  window.doAdminLogin = async function () {
+    const { email, password } = authElements();
+    const emailValue = (email && email.value || '').trim();
+    const passwordValue = password && password.value || '';
+
+    clearLoginError();
+    if (!emailValue || !passwordValue) {
+      showLoginError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+      return;
+    }
+
+    try {
+      setLoginBusy(true);
+      await firebase.auth().signInWithEmailAndPassword(emailValue, passwordValue);
+    } catch (error) {
+      console.error('Admin login failed:', error);
+      const messages = {
+        'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة.',
+        'auth/user-disabled': 'تم تعطيل هذا الحساب.',
+        'auth/user-not-found': 'بيانات تسجيل الدخول غير صحيحة.',
+        'auth/wrong-password': 'بيانات تسجيل الدخول غير صحيحة.',
+        'auth/invalid-credential': 'بيانات تسجيل الدخول غير صحيحة.',
+        'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلًا ثم حاول مجددًا.',
+        'auth/network-request-failed': 'تعذّر الاتصال بالإنترنت.'
+      };
+      showLoginError(messages[error.code] || 'تعذّر تسجيل الدخول. حاول مرة أخرى.');
+      setLoginBusy(false);
+    }
+  };
+
+  window.doAdminLogout = async function () {
+    try {
+      await firebase.auth().signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      showLoginError('تعذّر تسجيل الخروج. أعد تحميل الصفحة.');
+    }
+  };
+
+  function startAuthObserver() {
+    if (authObserverStarted || !window.firebase || !firebase.apps.length) return;
+    authObserverStarted = true;
+    firebase.auth().onAuthStateChanged(handleAuthState);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    showLoginScreen();
+    const password = document.getElementById('admin-login-pass');
+    if (password) password.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') window.doAdminLogin();
+    });
+    // Firebase is initialized later in this file before DOMContentLoaded fires.
+    startAuthObserver();
+  });
+})();
 </script>
 
 <style>
@@ -268,7 +346,7 @@ input,select,textarea{font-family:inherit}
 </head>
 <body>
 <div id="admin-auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(9,9,9,0.97);z-index:99999;align-items:center;justify-content:center;flex-direction:column;">
-  <div style="background:#111;border:1px solid #C9A84C;border-radius:16px;padding:40px 32px;width:340px;text-align:center;">
+  <div style="background:#111;border:1px solid #C9A84C;border-radius:16px;padding:40px 32px;width:min(340px,calc(100vw - 32px));text-align:center;">
     <div style="font-size:2.5rem;margin-bottom:8px;">👑</div>
     <h2 style="color:#C9A84C;margin:0 0 4px;font-size:1.4rem;">لوحة تحكم لمسة</h2>
     <p style="color:#888;font-size:0.85rem;margin:0 0 24px;">للمسؤولين المعتمدين فقط</p>
@@ -278,7 +356,7 @@ input,select,textarea{font-family:inherit}
     <button id="admin-login-btn" onclick="doAdminLogin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#000;border:none;border-radius:8px;font-size:1.1rem;font-weight:700;cursor:pointer;margin-top:8px;">دخول</button>
   </div>
 </div>
-<div id="admin-main-content" style="display:none;">
+<div id="admin-main-content" style="display:none;flex:1;width:100%;min-width:0;">
 
 <div class="loading-ov" id="loading-ov">
   <div class="loading-logo">lamsay</div>
@@ -308,7 +386,8 @@ input,select,textarea{font-family:inherit}
   <div class="sb-foot">
     <div class="sb-user">
       <div class="sb-av"><i class="ti ti-crown"></i></div>
-      <div><div class="sb-un">مدير المتجر</div><div class="sb-ur">lamsay.com</div></div>
+      <div style="min-width:0;flex:1"><div class="sb-un" id="admin-logged-name">مدير المتجر</div><div class="sb-ur">lamsay.com</div></div>
+      <button type="button" onclick="doAdminLogout()" title="تسجيل الخروج" aria-label="تسجيل الخروج" style="color:var(--red);font-size:18px;padding:6px"><i class="ti ti-logout"></i></button>
     </div>
     <div class="fb-st" id="fb-st"><i class="ti ti-cloud" style="font-size:14px"></i> متصل بـ Firebase</div>
   </div>
@@ -674,10 +753,7 @@ const ST = {new:{l:'جديد',c:'s-new'},pending:{l:'معلق',c:'s-pending'},co
 // ════════════════════════════════════════════════
 // LOAD FROM FIREBASE
 // ════════════════════════════════════════════════
-let _listenersStarted = false;
 function startListeners() {
-  if (_listenersStarted || !_adminAuthorized) return;
-  _listenersStarted = true;
   if (!fbReady) { setTimeout(hideLoading, 1000); return; }
   db.collection('products').onSnapshot(snap => {
     PRODUCTS = snap.docs.map(d => ({...d.data(), _id: d.id}));
@@ -1057,37 +1133,50 @@ function toast(msg) { const el=document.getElementById('toast'); document.getEle
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
-// CHANGE PASSWORD
+// CHANGE PASSWORD — Firebase Authentication
 window.changePass = async function() {
-  const oldPass = (document.getElementById('s-pass-old')||{}).value || '';
-  const newPass = (document.getElementById('s-pass-new')||{}).value || '';
-  const confirm = (document.getElementById('s-pass-confirm')||{}).value || '';
+  const oldPass = (document.getElementById('s-pass-old') || {}).value || '';
+  const newPass = (document.getElementById('s-pass-new') || {}).value || '';
+  const confirmation = (document.getElementById('s-pass-confirm') || {}).value || '';
   const user = firebase.auth().currentUser;
+
   if (!user || !user.email) { toast('❌ يجب تسجيل الدخول أولًا'); return; }
   if (!oldPass) { toast('⚠️ أدخل كلمة المرور الحالية'); return; }
-  if (newPass.length < 8) { toast('⚠️ كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل'); return; }
-  if (newPass !== confirm) { toast('⚠️ كلمة المرور الجديدة غير متطابقة'); return; }
+  if (newPass.length < 8) { toast('⚠️ كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف'); return; }
+  if (newPass !== confirmation) { toast('⚠️ كلمة المرور الجديدة غير متطابقة'); return; }
+
   try {
     const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
     await user.reauthenticateWithCredential(credential);
     await user.updatePassword(newPass);
-    ['s-pass-old','s-pass-new','s-pass-confirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    toast('✅ تم تغيير كلمة المرور عبر Firebase');
-  } catch (e) {
-    const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
-      ? '❌ كلمة المرور الحالية غير صحيحة'
-      : '❌ تعذر تغيير كلمة المرور';
-    toast(msg);
+    document.getElementById('s-pass-old').value = '';
+    document.getElementById('s-pass-new').value = '';
+    document.getElementById('s-pass-confirm').value = '';
+    toast('✅ تم تغيير كلمة المرور بنجاح');
+  } catch (error) {
+    console.error('Password update failed:', error);
+    const messages = {
+      'auth/wrong-password': '❌ كلمة المرور الحالية غير صحيحة',
+      'auth/invalid-credential': '❌ كلمة المرور الحالية غير صحيحة',
+      'auth/weak-password': '⚠️ كلمة المرور الجديدة ضعيفة',
+      'auth/requires-recent-login': '⚠️ سجّل الخروج ثم ادخل مجددًا قبل تغيير كلمة المرور'
+    };
+    toast(messages[error.code] || '❌ تعذّر تغيير كلمة المرور');
   }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+window.startAdminApp = function() {
+  if (window.__lamsayAdminStarted) return;
+  window.__lamsayAdminStarted = true;
   renderEmojiGrid();
   renderOverview();
-  document.getElementById('fb-st').className = fbReady ? 'fb-st' : 'fb-st off';
-  document.getElementById('fb-st').innerHTML = fbReady ? '<i class="ti ti-cloud" style="font-size:14px"></i> متصل بـ Firebase' : '<i class="ti ti-cloud-off" style="font-size:14px"></i> غير متصل';
-  checkAdminAuth();
-});
+  const status = document.getElementById('fb-st');
+  if (status) {
+    status.className = fbReady ? 'fb-st' : 'fb-st off';
+    status.innerHTML = fbReady ? '<i class="ti ti-cloud" style="font-size:14px"></i> متصل بـ Firebase' : '<i class="ti ti-cloud-off" style="font-size:14px"></i> غير متصل';
+  }
+  startListeners();
+};
 </script>
 
 <script>
@@ -1731,15 +1820,6 @@ if (localStorage.getItem('lamsay_auto_report') === '1') {
 }
 
 </script>
-<button onclick="doLogin()" 
-      style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;transition:background .15s"
-      onmouseover="this.style.background='#E8C96A'" onmouseout="this.style.background='#C9A84C'">
-      تسجيل الدخول
-    </button>
-    <div style="font-size:11px;color:#444;margin-top:20px">lamsay.com &copy; 2025</div>
-  </div>
-</div>
-
 
 </div><!-- /admin-main-content -->
 </body>
