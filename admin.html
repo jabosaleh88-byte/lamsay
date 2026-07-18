@@ -480,30 +480,38 @@ input,select,textarea{font-family:inherit}
         <div class="sc-title"><i class="ti ti-ticket"></i> إدارة كوبونات الخصم</div>
         <button class="btn-p" onclick="showAddCoupon()"><i class="ti ti-plus"></i> كوبون جديد</button>
       </div>
-      <!-- نموذج إضافة كوبون -->
+      <!-- نموذج إضافة/تعديل كوبون -->
       <div class="sc" id="coupon-form-box" style="display:none;margin-bottom:20px;border:1px solid rgba(91,138,240,.3)">
-        <div class="sc-title" style="color:#7aa8ff"><i class="ti ti-plus"></i> إضافة كوبون جديد</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px">
-          <div class="fg"><label>كود الخصم *</label><input class="fi" id="cp-code" placeholder="مثال: LAMSAY20" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="sc-title" id="coupon-form-title" style="color:#7aa8ff"><i class="ti ti-plus"></i> إضافة كوبون جديد</div>
+        <input type="hidden" id="cp-id">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px">
+          <div class="fg"><label>كود الخصم *</label><input class="fi" id="cp-code" placeholder="مثال: LAMSAY20" oninput="this.value=this.value.toUpperCase().replace(/\s+/g,'')"></div>
           <div class="fg"><label>نوع الخصم</label>
             <select class="fi" id="cp-type" onchange="updateCouponPreview()">
               <option value="percent">نسبة مئوية %</option>
               <option value="fixed">مبلغ ثابت د.أ</option>
+              <option value="free_shipping">شحن مجاني</option>
             </select>
           </div>
-          <div class="fg"><label>قيمة الخصم *</label><input class="fi" id="cp-value" type="number" min="1" placeholder="مثال: 20" oninput="updateCouponPreview()"></div>
-          <div class="fg"><label>الحد الأدنى للطلب (د.أ)</label><input class="fi" id="cp-min" type="number" min="0" placeholder="0 = بدون حد أدنى"></div>
+          <div class="fg"><label>قيمة الخصم *</label><input class="fi" id="cp-value" type="number" min="0" step="0.01" placeholder="مثال: 20" oninput="updateCouponPreview()"></div>
+          <div class="fg"><label>الحد الأدنى للطلب (د.أ)</label><input class="fi" id="cp-min" type="number" min="0" step="0.01" placeholder="0 = بدون حد أدنى"></div>
+          <div class="fg"><label>أقصى خصم للنسبة (د.أ)</label><input class="fi" id="cp-max-discount" type="number" min="0" step="0.01" placeholder="0 = بدون سقف"></div>
+          <div class="fg"><label>إجمالي مرات الاستخدام</label><input class="fi" id="cp-usage-limit" type="number" min="0" step="1" placeholder="0 = غير محدود"></div>
+          <div class="fg"><label>الحد لكل عميل</label><input class="fi" id="cp-per-customer" type="number" min="0" step="1" placeholder="0 = غير محدود"></div>
+          <div class="fg"><label>تاريخ بداية الصلاحية</label><input class="fi" id="cp-start" type="date"></div>
           <div class="fg"><label>تاريخ انتهاء الصلاحية</label><input class="fi" id="cp-exp" type="date"></div>
+          <div class="fg"><label>الحالة</label><select class="fi" id="cp-active"><option value="true">فعّال</option><option value="false">موقوف</option></select></div>
+          <div class="fg"><label>وصف داخلي</label><input class="fi" id="cp-note" placeholder="مثال: حملة الصيف"></div>
           <div class="fg"><label>معاينة</label><div id="cp-preview" style="padding:8px 12px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--green);font-weight:700">اختر النوع والقيمة</div></div>
         </div>
-        <div style="display:flex;gap:10px;margin-top:14px">
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
           <button class="btn-p" onclick="saveCoupon()"><i class="ti ti-check"></i> حفظ الكوبون</button>
-          <button class="btn-sec" onclick="document.getElementById('coupon-form-box').style.display='none'">إلغاء</button>
+          <button class="btn-sec" onclick="resetCouponForm(true)">إلغاء</button>
         </div>
       </div>
       <!-- جدول الكوبونات -->
       <div class="tw"><table class="tbl">
-        <thead><tr><th>الكود</th><th>النوع</th><th>القيمة</th><th>الحد الأدنى</th><th>الانتهاء</th><th>استخدم</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <thead><tr><th>الكود</th><th>النوع</th><th>القيمة</th><th>الشروط</th><th>الصلاحية</th><th>الاستخدام</th><th>الحالة</th><th>إجراءات</th></tr></thead>
         <tbody id="coupons-tbody"></tbody>
       </table></div>
     </div>
@@ -1273,75 +1281,107 @@ async function loadAnalytics() {
 // ════════════════════════════════════════════
 // 🎟️ إدارة الكوبونات
 // ════════════════════════════════════════════
+let couponCache = {};
+
+function couponDate(v){
+  if(!v) return null;
+  if(v.toDate) return v.toDate();
+  if(v.seconds) return new Date(v.seconds*1000);
+  const d = new Date(v); return isNaN(d) ? null : d;
+}
+function couponDateInput(v){
+  const d=couponDate(v); if(!d) return '';
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+function couponStatus(c){
+  const now=new Date(), start=couponDate(c.startsAt), exp=couponDate(c.expiresAt);
+  if(c.active===false) return {ok:false,label:'موقوف'};
+  if(start && start>now) return {ok:false,label:'لم يبدأ'};
+  if(exp && exp<now) return {ok:false,label:'منتهي'};
+  if((Number(c.usageLimit)||0)>0 && (Number(c.usedCount)||0)>=(Number(c.usageLimit)||0)) return {ok:false,label:'مكتمل'};
+  return {ok:true,label:'فعّال'};
+}
 async function loadCoupons() {
   try {
-    const snap = await db.collection('coupons').orderBy('createdAt','desc').get();
+    let snap;
+    try { snap = await db.collection('coupons').orderBy('createdAt','desc').get(); }
+    catch(_) { snap = await db.collection('coupons').get(); }
     const tbody = document.getElementById('coupons-tbody');
     if (!tbody) return;
-    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--g)">لا توجد كوبونات بعد</td></tr>'; return; }
-    tbody.innerHTML = snap.docs.map(d => {
-      const c = d.data();
-      const isActive = c.active !== false && (!c.expiresAt || (c.expiresAt.toDate && c.expiresAt.toDate() > new Date()));
+    couponCache={};
+    snap.docs.forEach(d=>couponCache[d.id]={id:d.id,...d.data()});
+    const rows=Object.values(couponCache).sort((a,b)=>{
+      const ad=couponDate(a.createdAt), bd=couponDate(b.createdAt); return (bd?bd.getTime():0)-(ad?ad.getTime():0);
+    });
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--g)">لا توجد كوبونات بعد</td></tr>'; return; }
+    tbody.innerHTML = rows.map(c => {
+      const st=couponStatus(c);
+      const typeLabel=c.type==='percent'?'نسبة %':c.type==='fixed'?'مبلغ ثابت':'شحن مجاني';
+      const valueLabel=c.type==='percent'?`${Number(c.value)||0}%`:c.type==='fixed'?`${Number(c.value)||0} د.أ`:'مجاني';
+      const conditions=[c.minOrder?`حد أدنى ${c.minOrder} د.أ`:'',c.maxDiscount?`سقف ${c.maxDiscount} د.أ`:'',c.perCustomerLimit?`${c.perCustomerLimit}/عميل`:''].filter(Boolean).join('<br>')||'بدون شروط';
+      const start=couponDate(c.startsAt), exp=couponDate(c.expiresAt);
+      const validity=`${start?start.toLocaleDateString('ar-JO'):'الآن'}<br>إلى ${exp?exp.toLocaleDateString('ar-JO'):'دائم'}`;
+      const usage=`${Number(c.usedCount)||0} / ${(Number(c.usageLimit)||0)>0?c.usageLimit:'∞'}`;
       return `<tr>
-        <td><strong style="color:var(--gold);font-family:monospace">${c.code}</strong></td>
-        <td>${c.type === 'percent' ? 'نسبة %' : 'مبلغ ثابت'}</td>
-        <td style="color:var(--green);font-weight:700">${c.type === 'percent' ? c.value + '%' : c.value + ' د.أ'}</td>
-        <td>${c.minOrder ? c.minOrder + ' د.أ' : '—'}</td>
-        <td>${c.expiresAt && c.expiresAt.toDate ? c.expiresAt.toDate().toLocaleDateString('ar-JO') : 'دائم'}</td>
-        <td>${c.usedCount || 0}</td>
-        <td><span class="coupon-badge-${isActive ? 'active' : 'inactive'}">${isActive ? 'فعّال' : 'منتهي'}</span></td>
-        <td style="display:flex;gap:6px">
-          <button class="btn-sec" style="padding:5px 10px;font-size:11px" onclick="toggleCoupon('${d.id}',${!c.active})">${c.active===false?'تفعيل':'إيقاف'}</button>
-          <button class="btn-sec" style="padding:5px 10px;font-size:11px;border-color:rgba(224,85,85,.3);color:var(--red)" onclick="deleteCoupon('${d.id}')">حذف</button>
-        </td>
-      </tr>`;
+        <td><strong style="color:var(--gold);font-family:monospace">${c.code||''}</strong>${c.note?`<div style="font-size:10px;color:var(--g);margin-top:4px">${c.note}</div>`:''}</td>
+        <td>${typeLabel}</td><td style="color:var(--green);font-weight:700">${valueLabel}</td>
+        <td style="font-size:11px;line-height:1.7">${conditions}</td><td style="font-size:11px;line-height:1.7">${validity}</td>
+        <td>${usage}</td><td><span class="coupon-badge-${st.ok?'active':'inactive'}">${st.label}</span></td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-sec" style="padding:5px 9px;font-size:11px" onclick="editCoupon('${c.id}')">تعديل</button>
+          <button class="btn-sec" style="padding:5px 9px;font-size:11px" onclick="toggleCoupon('${c.id}',${c.active===false})">${c.active===false?'تفعيل':'إيقاف'}</button>
+          <button class="btn-sec" style="padding:5px 9px;font-size:11px;border-color:rgba(224,85,85,.3);color:var(--red)" onclick="deleteCoupon('${c.id}')">حذف</button>
+        </td></tr>`;
     }).join('');
-    document.getElementById('sb-custc') && (document.getElementById('sb-custc').textContent = snap.size);
-  } catch(e) { console.log('Coupons error:', e.message); }
+  } catch(e) { console.log('Coupons error:', e.message); showToast('تعذر تحميل الكوبونات'); }
 }
-
-function showAddCoupon() {
-  const box = document.getElementById('coupon-form-box');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+function showAddCoupon(){ resetCouponForm(false); document.getElementById('coupon-form-box').style.display='block'; }
+function resetCouponForm(hide=false){
+  ['cp-id','cp-code','cp-value','cp-min','cp-max-discount','cp-usage-limit','cp-per-customer','cp-start','cp-exp','cp-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('cp-type').value='percent'; document.getElementById('cp-active').value='true';
+  document.getElementById('coupon-form-title').innerHTML='<i class="ti ti-plus"></i> إضافة كوبون جديد';
+  updateCouponPreview(); if(hide) document.getElementById('coupon-form-box').style.display='none';
 }
-
-function updateCouponPreview() {
-  const type = document.getElementById('cp-type').value;
-  const val = document.getElementById('cp-value').value;
-  const prev = document.getElementById('cp-preview');
-  if (!val) { prev.textContent = 'اختر النوع والقيمة'; prev.style.color = 'var(--gl)'; return; }
-  prev.textContent = type === 'percent' ? `خصم ${val}% على المجموع` : `خصم ${val} د.أ ثابت`;
-  prev.style.color = 'var(--green)';
+function editCoupon(id){
+  const c=couponCache[id]; if(!c) return;
+  document.getElementById('cp-id').value=id; document.getElementById('cp-code').value=c.code||'';
+  document.getElementById('cp-type').value=c.type||'percent'; document.getElementById('cp-value').value=Number(c.value)||0;
+  document.getElementById('cp-min').value=Number(c.minOrder)||0; document.getElementById('cp-max-discount').value=Number(c.maxDiscount)||0;
+  document.getElementById('cp-usage-limit').value=Number(c.usageLimit)||0; document.getElementById('cp-per-customer').value=Number(c.perCustomerLimit)||0;
+  document.getElementById('cp-start').value=couponDateInput(c.startsAt); document.getElementById('cp-exp').value=couponDateInput(c.expiresAt);
+  document.getElementById('cp-active').value=c.active===false?'false':'true'; document.getElementById('cp-note').value=c.note||'';
+  document.getElementById('coupon-form-title').innerHTML='<i class="ti ti-edit"></i> تعديل الكوبون';
+  document.getElementById('coupon-form-box').style.display='block'; updateCouponPreview(); document.getElementById('coupon-form-box').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-async function saveCoupon() {
-  const code = document.getElementById('cp-code').value.trim().toUpperCase();
-  const type = document.getElementById('cp-type').value;
-  const value = parseFloat(document.getElementById('cp-value').value);
-  const minOrder = parseFloat(document.getElementById('cp-min').value) || 0;
-  const expDate = document.getElementById('cp-exp').value;
-  if (!code || !value) { alert('أدخل الكود والقيمة'); return; }
-  try {
-    const data = { code, type, value, minOrder, active: true, usedCount: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-    if (expDate) data.expiresAt = firebase.firestore.Timestamp.fromDate(new Date(expDate));
-    await db.collection('coupons').add(data);
-    document.getElementById('coupon-form-box').style.display = 'none';
-    ['cp-code','cp-value','cp-min','cp-exp'].forEach(id => document.getElementById(id).value = '');
-    loadCoupons();
-    showToast('✅ تم حفظ الكوبون');
-  } catch(e) { alert('خطأ: ' + e.message); }
+function updateCouponPreview(){
+  const type=document.getElementById('cp-type').value, val=Number(document.getElementById('cp-value').value)||0, prev=document.getElementById('cp-preview');
+  const valueBox=document.getElementById('cp-value'); valueBox.disabled=type==='free_shipping';
+  if(type==='free_shipping'){prev.textContent='شحن مجاني للطلب';prev.style.color='var(--green)';return;}
+  if(!val){prev.textContent='اختر النوع والقيمة';prev.style.color='var(--gl)';return;}
+  prev.textContent=type==='percent'?`خصم ${val}% على المجموع`:`خصم ${val} د.أ ثابت`; prev.style.color='var(--green)';
 }
-
-async function toggleCoupon(id, active) {
-  await db.collection('coupons').doc(id).update({ active });
-  loadCoupons();
+async function saveCoupon(){
+  const id=document.getElementById('cp-id').value, code=document.getElementById('cp-code').value.trim().toUpperCase(), type=document.getElementById('cp-type').value;
+  const value=type==='free_shipping'?0:Number(document.getElementById('cp-value').value), minOrder=Number(document.getElementById('cp-min').value)||0;
+  const maxDiscount=Number(document.getElementById('cp-max-discount').value)||0, usageLimit=Math.floor(Number(document.getElementById('cp-usage-limit').value)||0), perCustomerLimit=Math.floor(Number(document.getElementById('cp-per-customer').value)||0);
+  const start=document.getElementById('cp-start').value, exp=document.getElementById('cp-exp').value, active=document.getElementById('cp-active').value==='true', note=document.getElementById('cp-note').value.trim();
+  if(!code || (type!=='free_shipping' && !(value>0))){alert('أدخل كوداً وقيمة خصم صحيحة');return;}
+  if(type==='percent' && value>100){alert('النسبة لا يمكن أن تتجاوز 100%');return;}
+  if(start&&exp&&new Date(start)>new Date(exp)){alert('تاريخ البداية يجب أن يسبق الانتهاء');return;}
+  try{
+    const duplicate=await db.collection('coupons').where('code','==',code).get();
+    if(duplicate.docs.some(d=>d.id!==id)){alert('هذا الكود مستخدم مسبقاً');return;}
+    const data={code,type,value,minOrder,maxDiscount,usageLimit,perCustomerLimit,active,note,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    data.startsAt=start?firebase.firestore.Timestamp.fromDate(new Date(start+'T00:00:00')):null;
+    data.expiresAt=exp?firebase.firestore.Timestamp.fromDate(new Date(exp+'T23:59:59')):null;
+    if(id){ await db.collection('coupons').doc(id).update(data); showToast('✅ تم تعديل الكوبون'); }
+    else { data.usedCount=0; data.createdAt=firebase.firestore.FieldValue.serverTimestamp(); await db.collection('coupons').add(data); showToast('✅ تم حفظ الكوبون'); }
+    resetCouponForm(true); loadCoupons();
+  }catch(e){alert('خطأ: '+e.message);}
 }
-
-async function deleteCoupon(id) {
-  if (!confirm('حذف هذا الكوبون نهائياً؟')) return;
-  await db.collection('coupons').doc(id).delete();
-  loadCoupons();
-}
+async function toggleCoupon(id,active){try{await db.collection('coupons').doc(id).update({active,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});loadCoupons();}catch(e){alert(e.message)}}
+async function deleteCoupon(id){if(!confirm('حذف هذا الكوبون نهائياً؟'))return;await db.collection('coupons').doc(id).delete();loadCoupons();}
 
 // ════════════════════════════════════════════
 // 📋 التقارير الأسبوعية

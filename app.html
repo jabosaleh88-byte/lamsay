@@ -528,6 +528,7 @@ try{db.enablePersistence({synchronizeTabs:true});}catch(e){}
 
 // --- Global State ---
 let cart       = JSON.parse(localStorage.getItem('m_cart') || '[]');
+let appliedCoupon = null;
 let savedLater = JSON.parse(localStorage.getItem('saved_for_later') || '[]');
 let currentUser= null;
 let shippingRates = {};
@@ -809,15 +810,25 @@ function updateShipping_m(){
   }
   updateCheckoutTotals_m(sub, ship);
 }
+function calculateCouponDiscount(sub, ship){
+  if(!appliedCoupon) return {discount:0, shipping:ship};
+  let discount=0, finalShip=ship;
+  if(appliedCoupon.type==='percent'){
+    discount=sub*(Number(appliedCoupon.value)||0)/100;
+    if((Number(appliedCoupon.maxDiscount)||0)>0) discount=Math.min(discount,Number(appliedCoupon.maxDiscount));
+  }else if(appliedCoupon.type==='fixed') discount=Math.min(sub,Number(appliedCoupon.value)||0);
+  else if(appliedCoupon.type==='free_shipping') finalShip=0;
+  return {discount:Math.max(0,discount),shipping:finalShip};
+}
 function updateCheckoutTotals_m(sub, ship){
-  const subEl  = document.getElementById('m-final-sub');
-  const shipEl = document.getElementById('m-final-ship');
-  const totEl  = document.getElementById('m-final-total');
-  const freeEl = document.getElementById('m-free-ship-msg');
-  if(subEl)  subEl.textContent  = formatPrice(sub);
-  if(shipEl) shipEl.textContent = ship===0?'مجاني 🎉':formatPrice(ship);
-  if(totEl)  totEl.textContent  = formatPrice(sub+ship);
-  if(freeEl) freeEl.style.display = ship===0?'block':'none';
+  const c=calculateCouponDiscount(sub,ship), total=Math.max(0,sub-c.discount+c.shipping);
+  const subEl=document.getElementById('m-final-sub'), shipEl=document.getElementById('m-final-ship'), totEl=document.getElementById('m-final-total');
+  const freeEl=document.getElementById('m-free-ship-msg'), row=document.getElementById('m-disc-row'), val=document.getElementById('m-disc-val'), label=document.getElementById('m-disc-label');
+  if(subEl)subEl.textContent=formatPrice(sub); if(shipEl)shipEl.textContent=c.shipping===0?'مجاني 🎉':formatPrice(c.shipping); if(totEl)totEl.textContent=formatPrice(total);
+  if(freeEl)freeEl.style.display=c.shipping===0?'block':'none';
+  if(row){row.style.display=(c.discount>0||appliedCoupon?.type==='free_shipping')?'flex':'none';}
+  if(val)val.textContent=appliedCoupon?.type==='free_shipping'?'شحن مجاني':'-'+formatPrice(c.discount);
+  if(label)label.textContent=appliedCoupon?`خصم (${appliedCoupon.code})`:'خصم';
 }
 
 // ============================================================
@@ -961,6 +972,34 @@ async function submitQuestion_m(){
 }
 
 // ============================================================
+// COUPONS
+// ============================================================
+function showCouponMessage(text,ok=false){
+  const el=document.getElementById('m-coupon-msg'); if(!el)return;
+  el.textContent=text; el.style.display='block'; el.style.color=ok?'var(--green)':'#ef7777';
+}
+async function applyCoupon_m(){
+  const inp=document.getElementById('m-coupon'), code=(inp?.value||'').trim().toUpperCase();
+  const sub=cart.reduce((s,i)=>s+(Number(i.price)||0)*i.qty,0);
+  if(!code){showCouponMessage('أدخل كود الخصم');return;}
+  try{
+    const snap=await db.collection('coupons').where('code','==',code).limit(1).get();
+    if(snap.empty){appliedCoupon=null;showCouponMessage('الكوبون غير موجود');updateShipping_m();return;}
+    const doc=snap.docs[0], c={id:doc.id,...doc.data()}, now=new Date();
+    const start=c.startsAt?.toDate?c.startsAt.toDate():null, exp=c.expiresAt?.toDate?c.expiresAt.toDate():null;
+    if(c.active===false){showCouponMessage('هذا الكوبون موقوف');return;}
+    if(start&&start>now){showCouponMessage('الكوبون لم يبدأ بعد');return;}
+    if(exp&&exp<now){showCouponMessage('انتهت صلاحية الكوبون');return;}
+    if((Number(c.usageLimit)||0)>0&&(Number(c.usedCount)||0)>=(Number(c.usageLimit)||0)){showCouponMessage('تم استنفاد مرات استخدام الكوبون');return;}
+    if(sub<(Number(c.minOrder)||0)){showCouponMessage(`الحد الأدنى للطلب ${formatPrice(c.minOrder)}`);return;}
+    const localUses=Number(localStorage.getItem('coupon_use_'+c.id)||0);
+    if((Number(c.perCustomerLimit)||0)>0&&localUses>=(Number(c.perCustomerLimit)||0)){showCouponMessage('لقد استخدمت هذا الكوبون بالحد المسموح');return;}
+    appliedCoupon=c; showCouponMessage(`تم تطبيق الكوبون ${c.code} بنجاح ✅`,true); updateShipping_m();
+  }catch(e){console.warn('applyCoupon:',e);showCouponMessage('تعذر التحقق من الكوبون');}
+}
+function clearAppliedCoupon(){appliedCoupon=null;const i=document.getElementById('m-coupon');if(i)i.value='';const m=document.getElementById('m-coupon-msg');if(m)m.style.display='none';updateShipping_m();}
+
+// ============================================================
 // CHECKOUT SHEET
 // ============================================================
 function openCheckoutSheet(){
@@ -1000,7 +1039,10 @@ async function submitOrder_m(){
   const sub  = cart.reduce((s,i)=>s+(parseFloat(i.price)||0)*i.qty,0);
   const rate = shippingRates[prov];
   const ship = rate ? (sub>=(rate.free_shipping_threshold||20)?0:(rate.shipping_cost||3)) : 3;
-  const total= sub+ship;
+  const couponCalc=calculateCouponDiscount(sub,ship);
+  const discount=couponCalc.discount;
+  const finalShip=couponCalc.shipping;
+  const total=Math.max(0,sub-discount+finalShip);
 
   const items = cart.map(i=>`• ${i.name} x${i.qty} = ${formatPrice((parseFloat(i.price)||0)*i.qty)}`).join('\n');
   const msg   = encodeURIComponent(
@@ -1009,7 +1051,9 @@ async function submitOrder_m(){
     (notes?`📝 ملاحظات: ${notes}\n`:'')+
     `\n🛒 المنتجات:\n${items}\n\n`+
     `💰 المجموع الفرعي: ${formatPrice(sub)}\n`+
-    `🚚 الشحن: ${ship===0?'مجاني':formatPrice(ship)}\n`+
+    `🚚 الشحن: ${finalShip===0?'مجاني':formatPrice(finalShip)}\n`+
+    (appliedCoupon?`🎟 الكوبون: ${appliedCoupon.code}\n`:'')+
+    (discount>0?`💸 الخصم: -${formatPrice(discount)}\n`:'')+
     `✅ الإجمالي: ${formatPrice(total)}`
   );
 
@@ -1036,10 +1080,17 @@ async function submitOrder_m(){
   try {
     await db.collection('orders').add({
       customer_name: name, phone, province: prov, address: addr, notes,
-      items: cart, subtotal: sub, shipping: ship, total,
+      items: cart, subtotal: sub, shipping: finalShip, discount, total,
+      coupon: appliedCoupon ? { id:appliedCoupon.id, code:appliedCoupon.code, type:appliedCoupon.type, value:appliedCoupon.value } : null,
       status: 'pending', created_at: firebase.firestore.FieldValue.serverTimestamp(),
       user_id: currentUser ? currentUser.uid : null
     });
+    if(appliedCoupon){
+      try{
+        await db.collection('coupons').doc(appliedCoupon.id).update({usedCount:firebase.firestore.FieldValue.increment(1),lastUsedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        localStorage.setItem('coupon_use_'+appliedCoupon.id,String(Number(localStorage.getItem('coupon_use_'+appliedCoupon.id)||0)+1));
+      }catch(couponErr){console.warn('coupon usage update:',couponErr);}
+    }
     // Auto-save customer to users collection
     try {
       if(phone && db){
@@ -1058,6 +1109,7 @@ async function submitOrder_m(){
 
   // Clear cart & redirect to WhatsApp
   cart=[];
+  appliedCoupon=null;
   localStorage.setItem('m_cart','[]');
   updateCartBadge();
   closeCheckoutSheet();
