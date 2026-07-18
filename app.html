@@ -20,7 +20,7 @@
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="لمسة">
@@ -253,6 +253,91 @@ input,select,textarea{font-family:inherit}
 .skeleton-text.short{width:55%;}
 .skeleton-btn{height:36px;background:#252525;border-radius:8px;margin:10px;animation:sk-shimmer 1.5s infinite;}
 @keyframes sk-shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* =========================================================
+   MOBILE-FIRST RESPONSIVE ENHANCEMENTS
+   ========================================================= */
+html{height:100%;height:100dvh}
+body{min-height:100%;min-height:100dvh;max-width:100vw;overflow:hidden}
+.main{scroll-behavior:smooth;scrollbar-width:none;contain:layout style}
+button,.bn-item,.cat-pill,.prod-card{touch-action:manipulation}
+button,input,select,textarea{font-size:16px}
+input,select,textarea{min-height:44px}
+.top-btn,.back-btn{min-width:44px;min-height:44px}
+.hero-btn,.ob-btn,.prod-add-m,.checkout-m,.submit-m,.auth-btn-m,.coupon-btn-m,.qa-send-btn-m{min-height:44px}
+.prod-card-img,.prod-img img,.ci-img img,.prod-sheet-img img{display:block;background:var(--dark3)}
+.cart-page,.auth-sheet-bg,.checkout-sheet-bg,.qa-sheet-bg,.prod-sheet-bg,.modal-overlay{height:100%;height:100dvh}
+.auth-sheet,.checkout-sheet,.qa-sheet,.prod-sheet,.modal-sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+@media (max-width:480px){
+  .top-nav{padding:10px 12px;gap:8px}
+  .app-logo{font-size:20px}
+  .top-actions{gap:6px}
+  .search-bar{padding:8px 12px}
+  .hero-strip{padding:22px 14px}
+  .hero-strip h1{font-size:22px}
+  .hero-strip p{font-size:12px}
+  .offer-banner{margin:12px;border-radius:14px;padding:15px 14px;gap:8px}
+  .ob-emoji{font-size:38px}
+  .ob-txt h3{font-size:15px}
+  .countdown-s{gap:5px}
+  .cd{padding:4px 7px}
+  .cats-scroll{padding:0 12px 4px;gap:10px}
+  .cat-circle{width:56px;height:56px;font-size:23px}
+  .sec-hd{padding:0 12px}
+  .prods-grid{padding:0 12px;gap:10px}
+  .prod-img{height:145px}
+  .prod-info-m{padding:10px}
+  .prod-name-m{font-size:12px;min-height:31px}
+  .prod-price-m{font-size:14px}
+  .bottom-nav{padding-top:6px}
+  .bn-item{min-height:48px}
+  .bn-icon{font-size:21px}
+  .toast{max-width:calc(100vw - 24px);white-space:normal;text-align:center;padding:10px 16px}
+  .cart-scroll{padding:12px}
+  .cart-footer-m{padding:12px;padding-bottom:calc(12px + var(--safe-bot))}
+  .prod-sheet-img{height:min(48vw,220px)}
+}
+
+@media (max-width:360px){
+  .app-logo small{display:none}
+  .top-btn{width:42px;height:42px}
+  .hero-strip h1{font-size:20px}
+  .hero-btn{padding:11px 22px}
+  .offer-banner{align-items:flex-start}
+  .ob-emoji{font-size:32px}
+  .prods-grid{gap:8px;padding:0 8px}
+  .prod-img{height:132px}
+  .prod-info-m{padding:8px}
+  .prod-add-m{font-size:11px;padding:8px 5px}
+  .bn-label{font-size:8px}
+  .coupon-row-m{flex-direction:column}
+  .coupon-btn-m{width:100%}
+  .pay-opts-m{grid-template-columns:1fr}
+}
+
+@media (min-width:700px){
+  body{width:min(100%,760px);margin-inline:auto;border-inline:1px solid #222;box-shadow:0 0 40px rgba(0,0,0,.35)}
+  .prods-grid{grid-template-columns:repeat(3,1fr)}
+  .prod-img{height:190px}
+  .auth-sheet,.checkout-sheet,.qa-sheet,.prod-sheet,.modal-sheet{max-width:760px;margin-inline:auto}
+  .cart-page{left:50%;right:auto;width:min(100%,760px);transform:translate(-150%)}
+  .cart-page.open{transform:translate(-50%)}
+}
+
+@media (orientation:landscape) and (max-height:520px){
+  .hero-strip{padding:14px 16px}
+  .hero-strip p{margin-bottom:10px}
+  .offer-banner{padding:12px 16px}
+  .auth-sheet,.checkout-sheet,.qa-sheet,.prod-sheet{max-height:96dvh}
+  .prod-sheet{display:grid;grid-template-columns:42% 58%}
+  .prod-sheet-img{height:100%;min-height:260px;border-radius:20px 0 0 0}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
 </style>
 </head>
 <body>
