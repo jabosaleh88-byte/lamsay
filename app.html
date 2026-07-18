@@ -1142,7 +1142,97 @@ async function init(){
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeCartToast(); closeCartPage(); closeCheckoutSheet(); closeProdSheet(); closeAuthSheet(); } });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', initOptimized);
+
+// ============================================================
+// LAMSAY APP COMPATIBILITY + FAST PREVIEW v3
+// Normalizes product fields written by admin.html and avoids fragile inline JSON.
+// ============================================================
+const APP_PREVIEW_MODE = new URLSearchParams(location.search).get('preview') === '1';
+let __allProductDocs = null;
+let __filteredProducts = [];
+let __pageOffset = 0;
+window.__productCache = Object.create(null);
+
+function pPick(o, keys, fallback=''){
+  for(const k of keys){ if(o && o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k]; }
+  return fallback;
+}
+function pDateMs(v){
+  if(!v) return 0;
+  try{ const d=typeof v.toDate==='function'?v.toDate():new Date(v); return isNaN(d)?0:d.getTime(); }catch(_){ return 0; }
+}
+function normalizeAppProduct(doc){
+  const raw=typeof doc.data==='function'?doc.data():doc;
+  const id=doc.id||raw.id||raw._id||'';
+  const p={
+    id,
+    name:pPick(raw,['nameAr','name_ar','name','nameEn','name_en'],'منتج'),
+    nameEn:pPick(raw,['nameEn','name_en']),
+    description:pPick(raw,['descAr','descriptionAr','description_ar','description','desc','descEn','descriptionEn']),
+    image:pPick(raw,['img','image_url','imageUrl','image','photo','thumbnail']),
+    price:Number(pPick(raw,['price','salePrice'],0))||0,
+    oldPrice:Number(pPick(raw,['oldPrice','old_price','regularPrice'],0))||0,
+    category:pPick(raw,['cat','category'],'misc'),
+    stock:Number(pPick(raw,['stock','quantity'],0))||0,
+    visible:!!pPick(raw,['visible','active','is_active'],true),
+    createdAt:pPick(raw,['createdAt','created_at','updatedAt','updated_at']),
+    raw
+  };
+  window.__productCache[id]=p;
+  return p;
+}
+function safeAttr(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function productPlaceholder(){ return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480"><rect width="100%" height="100%" fill="#1a1a1a"/><text x="50%" y="48%" text-anchor="middle" fill="#C9A84C" font-size="54">lamsay</text><text x="50%" y="60%" text-anchor="middle" fill="#888" font-size="24">No Image</text></svg>`); }
+async function fetchAllProductsFast(){
+  if(__allProductDocs) return __allProductDocs;
+  const snap=await db.collection('products').get();
+  __allProductDocs=snap.docs.map(normalizeAppProduct).filter(p=>p.visible).sort((a,b)=>pDateMs(b.createdAt)-pDateMs(a.createdAt));
+  return __allProductDocs;
+}
+function renderProductSlice(reset=false){
+  const grid=document.getElementById('prods-grid'); if(!grid)return;
+  const skeleton=document.getElementById('m-skeleton-grid'); if(skeleton)skeleton.style.display='none';
+  if(reset){grid.innerHTML='';__pageOffset=0;}
+  const slice=__filteredProducts.slice(__pageOffset,__pageOffset+PAGE_SIZE);__pageOffset+=slice.length;
+  const html=slice.map(p=>`<div class="prod-card" data-product-id="${safeAttr(p.id)}" onclick="openProductById('${safeAttr(p.id)}')">
+    <img src="${safeAttr(p.image||productPlaceholder())}" alt="${safeAttr(p.name)}" loading="lazy" decoding="async" class="prod-card-img" onerror="this.onerror=null;this.src=productPlaceholder()">
+    <div class="prod-card-body"><div class="prod-card-name">${safeAttr(p.name)}</div><div class="prod-card-price">${formatPrice(p.price)}</div>
+    ${p.oldPrice?`<div class="prod-card-old">${formatPrice(p.oldPrice)}</div>`:''}
+    <button class="add-to-cart-btn" onclick="event.stopPropagation();addProductById('${safeAttr(p.id)}')">🛒 أضف للسلة</button></div></div>`).join('');
+  grid.insertAdjacentHTML('beforeend',html);
+  const btn=document.getElementById('load-more-btn');if(btn){btn.style.display=__pageOffset<__filteredProducts.length?'block':'none';btn.disabled=false;}
+}
+window.openProductById=function(id){const p=window.__productCache[id];if(!p)return;openProdSheet(id,{name:p.name,description:p.description,image_url:p.image,price:p.price,old_price:p.oldPrice,category:p.category});};
+window.addProductById=function(id){const p=window.__productCache[id];if(p)addToCart(id,p.name,p.price,p.image||'');};
+async function loadProductsCompatible(category='all'){
+  const all=await fetchAllProductsFast();
+  __filteredProducts=category&&category!=='all'?all.filter(p=>p.category===category):all.slice();
+  renderProductSlice(true);
+}
+window.loadMoreProducts=function(){renderProductSlice(false);};
+window.filterCat=function(cat){
+  document.querySelectorAll('.cat-pill,.cat-chip').forEach(c=>c.classList.toggle('act',c.getAttribute('onclick')?.includes(`'${cat}'`)));
+  loadProductsCompatible(cat).catch(e=>{console.error(e);showToast('تعذر تحميل هذه الفئة');});
+  document.getElementById('prods-section')?.scrollIntoView({behavior:APP_PREVIEW_MODE?'auto':'smooth'});
+};
+async function initOptimized(){
+  const productsTask=loadProductsCompatible('all').catch(e=>{console.error('products:',e);const sk=document.getElementById('m-skeleton-grid');if(sk)sk.innerHTML='<div style="padding:24px;color:#e05555">تعذر تحميل المنتجات. تحقق من قواعد Firestore.</div>';});
+  if(APP_PREVIEW_MODE){
+    document.documentElement.classList.add('preview-mode');
+    const install=document.getElementById('install-banner');if(install)install.style.display='none';
+    productsTask.then(()=>fetchShippingRates().catch(()=>{}));
+  }else{
+    await Promise.all([productsTask,fetchShippingRates().catch(()=>{})]);
+    startCountdown('2026-12-31T23:59:59');
+  }
+  updateCartBadge();
+  const lb=document.getElementById('load-more-btn');if(lb)lb.onclick=()=>renderProductSlice(false);
+  const gov=document.getElementById('m-gov');if(gov)gov.addEventListener('change',updateShipping_m);
+  const si=document.getElementById('m-search-inp');if(si){let timer;si.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{const q=si.value.trim().toLowerCase();__filteredProducts=(__allProductDocs||[]).filter(p=>!q||p.name.toLowerCase().includes(q)||(p.description||'').toLowerCase().includes(q));renderProductSlice(true);},180)});}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCartToast();closeCartPage();closeCheckoutSheet();closeProdSheet();closeAuthSheet();}});
+}
+
 </script>
 </body>
 </html>

@@ -1965,15 +1965,15 @@ if (localStorage.getItem('lamsay_auto_report') === '1') {
           <button id="app-preview-new" class="tb-btn" style="padding:7px 10px"><i class="ti ti-external-link"></i></button>
           <button id="app-preview-close" class="tb-btn" style="padding:7px 10px"><i class="ti ti-x"></i></button>
         </div>
-        <iframe id="app-preview-frame" title="معاينة تطبيق لمسة" style="width:100%;flex:1;border:0;background:white" loading="eager"></iframe>
+        <iframe id="app-preview-frame" title="معاينة تطبيق لمسة" style="width:100%;flex:1;border:0;background:white" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>`;
       document.body.appendChild(overlay);
       overlay.querySelector('#app-preview-close').onclick=()=>overlay.remove();
       overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
-      overlay.querySelector('#app-preview-refresh').onclick=()=>{overlay.querySelector('#app-preview-frame').src='app.html?preview=1&t='+Date.now();};
-      overlay.querySelector('#app-preview-new').onclick=()=>window.open('app.html?preview=1&t='+Date.now(),'_blank','noopener');
+      overlay.querySelector('#app-preview-refresh').onclick=()=>{overlay.querySelector('#app-preview-frame').src='app.html?preview=1&refresh='+Date.now();};
+      overlay.querySelector('#app-preview-new').onclick=()=>window.open('app.html?preview=1','_blank','noopener');
     }
-    overlay.querySelector('#app-preview-frame').src='app.html?preview=1&t='+Date.now();
+    if(!overlay.querySelector('#app-preview-frame').src) overlay.querySelector('#app-preview-frame').src='app.html?preview=1';
   };
 
   // Make the top export button context-aware.
@@ -1985,6 +1985,73 @@ if (localStorage.getItem('lamsay_auto_report') === '1') {
     if(id==='tab-customers' || id==='tab-reports') return window.exportCustomersCSV();
     return oldExport ? oldExport() : undefined;
   };
+})();
+</script>
+
+
+<script>
+/* lamsay-export-suite-v3: ordered CSV, real XLSX, printable PDF */
+(function(){
+  const AR_CATS={beauty:'جمال',skincare:'بشرة',hair:'شعر',body:'جسم',perfume:'عطور',fashion:'أزياء',spices:'بهارات',food:'تغذية',misc:'متنوعة',trending:'تريند'};
+  const pick=(o,keys,f='')=>{for(const k of keys){if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]}return f};
+  const n=v=>Number.isFinite(Number(v))?Number(v):0;
+  const clean=v=>v==null?'':(typeof v==='object'&&typeof v.toDate==='function'?v.toDate():v);
+  const dateText=v=>{v=clean(v);if(!v)return '';const d=v instanceof Date?v:new Date(v);return isNaN(d)?String(v):d.toLocaleString('ar-JO')};
+  const stamp=v=>{v=clean(v);if(!v)return 0;const d=v instanceof Date?v:new Date(v);return isNaN(d)?0:d.getTime()};
+  const productSource=()=>Array.isArray(window.PRODUCTS)?window.PRODUCTS:(typeof PRODUCTS!=='undefined'&&Array.isArray(PRODUCTS)?PRODUCTS:[]);
+  const normalizeProduct=p=>({
+    id:pick(p,['_id','id']),
+    nameAr:pick(p,['nameAr','name_ar','name']), nameEn:pick(p,['nameEn','name_en']),
+    brandAr:pick(p,['brandAr','brand_ar','brand']), brandEn:pick(p,['brandEn','brand_en']),
+    category:pick(p,['cat','category']), price:n(pick(p,['price','salePrice'])), oldPrice:n(pick(p,['oldPrice','old_price','regularPrice'])),
+    stock:n(pick(p,['stock','quantity'])), visible:!!pick(p,['visible','active','is_active'],true),
+    descAr:pick(p,['descAr','descriptionAr','description_ar','description']), descEn:pick(p,['descEn','descriptionEn','description_en']),
+    image:pick(p,['img','image','imageUrl','image_url']), createdAt:pick(p,['createdAt','created_at']), updatedAt:pick(p,['updatedAt','updated_at'])
+  });
+  function productRows(sort='created_desc'){
+    const a=productSource().map(normalizeProduct);
+    const collator=new Intl.Collator('ar',{numeric:true,sensitivity:'base'});
+    const sorts={
+      created_desc:(x,y)=>stamp(y.createdAt)-stamp(x.createdAt), created_asc:(x,y)=>stamp(x.createdAt)-stamp(y.createdAt),
+      name_asc:(x,y)=>collator.compare(x.nameAr,y.nameAr), name_desc:(x,y)=>collator.compare(y.nameAr,x.nameAr),
+      category:(x,y)=>collator.compare(AR_CATS[x.category]||x.category,AR_CATS[y.category]||y.category)||collator.compare(x.nameAr,y.nameAr),
+      stock_asc:(x,y)=>x.stock-y.stock, stock_desc:(x,y)=>y.stock-x.stock
+    };
+    return a.sort(sorts[sort]||sorts.created_desc).map((p,i)=>({
+      'م':i+1,'الاسم العربي':p.nameAr,'الاسم الإنجليزي':p.nameEn,'الماركة':p.brandAr||p.brandEn,
+      'الفئة':AR_CATS[p.category]||p.category,'السعر':p.price,'السعر السابق':p.oldPrice||'',
+      'الخصم %':p.oldPrice>p.price?Math.round((1-p.price/p.oldPrice)*100):0,'المخزون':p.stock,
+      'الحالة':p.visible?'ظاهر':'مخفي','الوصف':p.descAr||p.descEn,'رابط الصورة':p.image,
+      'تاريخ الإنشاء':dateText(p.createdAt),'آخر تحديث':dateText(p.updatedAt),'المعرف':p.id
+    }));
+  }
+  async function customerRows(sort='name_asc'){
+    const settled=await Promise.allSettled([db.collection('users').get(),db.collection('customers').get(),db.collection('orders').get()]);
+    const docs=i=>settled[i].status==='fulfilled'?settled[i].value.docs.map(d=>({id:d.id,...d.data()})):[];
+    const users=docs(0), customers=docs(1), orders=docs(2), map=new Map();
+    const phone=o=>String(pick(o,['phone_number','phone','customer_phone','mobile'])).replace(/\D/g,'');
+    const key=o=>phone(o)||String(pick(o,['email','uid','id']));
+    const merge=(o,src)=>{const k=key(o);if(!k)return;const c=map.get(k)||{sources:new Set(),ordersCount:0,totalSpent:0};c.sources.add(src);
+      c.id=pick(o,['uid','id'],c.id);c.name=pick(o,['display_name','name','customer_name','fullName'],c.name);c.phone=pick(o,['phone_number','phone','customer_phone','mobile'],c.phone);
+      c.email=pick(o,['email'],c.email);c.gov=pick(o,['default_province','gov','province','governorate'],c.gov);c.city=pick(o,['city','default_city'],c.city);
+      c.address=pick(o,['default_address','address','full_address'],c.address);c.createdAt=pick(o,['created_at','createdAt','firstOrderDate'],c.createdAt);c.lastOrder=pick(o,['lastOrderDate','last_order','updatedAt'],c.lastOrder);
+      c.ordersCount=Math.max(c.ordersCount,n(pick(o,['orders_count','ordersCount','totalOrders'])));c.totalSpent=Math.max(c.totalSpent,n(pick(o,['total_spent','totalSpent'])));c.source=pick(o,['source'],c.source);map.set(k,c)};
+    users.forEach(x=>merge(x,'users'));customers.forEach(x=>merge(x,'customers'));
+    orders.forEach(o=>{const x={id:o.id,name:pick(o,['name','customer_name','customerName']),phone:pick(o,['phone','customer_phone','phone_number']),email:o.email,gov:pick(o,['gov','province','governorate']),city:o.city,address:o.address};merge(x,'orders');const k=key(x);if(!k)return;const c=map.get(k);c.ordersCount++;c.totalSpent+=n(pick(o,['total','grand_total','amount']));c.lastOrder=pick(o,['createdAt','created_at','date'],c.lastOrder);map.set(k,c)});
+    const a=[...map.values()];const collator=new Intl.Collator('ar',{numeric:true,sensitivity:'base'});
+    const sorts={name_asc:(x,y)=>collator.compare(x.name||'',y.name||''),name_desc:(x,y)=>collator.compare(y.name||'',x.name||''),orders_desc:(x,y)=>y.ordersCount-x.ordersCount,spent_desc:(x,y)=>y.totalSpent-x.totalSpent,recent:(x,y)=>stamp(y.lastOrder)-stamp(x.lastOrder)};
+    a.sort(sorts[sort]||sorts.name_asc);
+    return a.map((c,i)=>({'م':i+1,'الاسم':c.name||'غير مسجل','الهاتف':c.phone,'البريد الإلكتروني':c.email,'المحافظة':c.gov,'المدينة':c.city,'العنوان الكامل':c.address,'عدد الطلبات':c.ordersCount,'إجمالي الإنفاق':Number(c.totalSpent.toFixed(2)),'تاريخ التسجيل/أول طلب':dateText(c.createdAt),'آخر طلب':dateText(c.lastOrder),'مصدر العميل':c.source,'مصادر البيانات':[...c.sources].join(' + '),'المعرف':c.id}));
+  }
+  function csvCell(v){v=v==null?'':v;return '"'+String(v).replace(/"/g,'""')+'"'}
+  function saveCSV(rows,name){if(!rows.length)return toast('لا توجد بيانات للتصدير');const headers=Object.keys(rows[0]);const csv='\uFEFF'+[headers.map(csvCell).join(','),...rows.map(r=>headers.map(h=>csvCell(r[h])).join(','))].join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+  async function loadXLSX(){if(window.XLSX)return;await new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=ok;s.onerror=fail;document.head.appendChild(s)})}
+  async function saveXLSX(rows,name,sheet){if(!rows.length)return toast('لا توجد بيانات للتصدير');toast('⏳ جارٍ إنشاء ملف Excel...');await loadXLSX();const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=Object.keys(rows[0]).map(h=>({wch:Math.min(45,Math.max(h.length+2,...rows.slice(0,200).map(r=>String(r[h]??'').length+2)))}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheet);XLSX.writeFile(wb,name+'.xlsx');toast('✅ تم إنشاء ملف Excel منظم')}
+  function printPDF(rows,title){if(!rows.length)return toast('لا توجد بيانات للتصدير');const headers=Object.keys(rows[0]);const w=window.open('','_blank');if(!w)return toast('اسمح بالنوافذ المنبثقة لإنشاء PDF');const esc=s=>String(s??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:9mm}body{font-family:Arial,sans-serif;color:#111}h1{font-size:20px;margin:0 0 4px}.meta{font-size:11px;color:#555;margin-bottom:12px}table{border-collapse:collapse;width:100%;font-size:9px}th,td{border:1px solid #bbb;padding:4px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee;font-weight:700}tr:nth-child(even){background:#fafafa}</style></head><body><h1>${esc(title)}</h1><div class="meta">تاريخ التقرير: ${new Date().toLocaleString('ar-JO')} — عدد السجلات: ${rows.length}</div><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${headers.map(h=>`<td>${esc(r[h])}</td>`).join('')}</tr>`).join('')}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}
+  function dialog(type){let ov=document.getElementById('export-suite-modal');if(ov)ov.remove();const isP=type==='products';ov=document.createElement('div');ov.id='export-suite-modal';ov.className='modal-bg open';ov.style.zIndex='100001';ov.innerHTML=`<div class="modal-box" style="max-width:520px"><div class="modal-hd"><div class="modal-ttl"><i class="ti ti-download" style="color:var(--gold)"></i> تصدير ${isP?'المنتجات':'العملاء'}</div><i class="ti ti-x modal-x" id="ex-close"></i></div><div class="modal-body"><div class="fg"><label>ترتيب البيانات</label><select class="fi" id="ex-sort">${isP?'<option value="created_desc">الأحدث أولاً</option><option value="created_asc">الأقدم أولاً</option><option value="name_asc">الاسم أ ← ي</option><option value="name_desc">الاسم ي ← أ</option><option value="category">الفئة ثم الاسم</option><option value="stock_asc">الأقل مخزوناً</option><option value="stock_desc">الأعلى مخزوناً</option>':'<option value="name_asc">الاسم أ ← ي</option><option value="name_desc">الاسم ي ← أ</option><option value="orders_desc">الأكثر طلبات</option><option value="spent_desc">الأعلى إنفاقاً</option><option value="recent">أحدث طلب</option>'}</select></div><p style="font-size:12px;color:var(--gl);margin:14px 0">اختر الصيغة المطلوبة. Excel ينشئ ملف ‎.xlsx حقيقياً، وPDF يفتح نافذة الطباعة لاختيار “حفظ بصيغة PDF”.</p><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><button class="btn-save" data-f="xlsx" style="justify-content:center"><i class="ti ti-file-spreadsheet"></i> Excel</button><button class="btn-save" data-f="csv" style="justify-content:center;background:#5B8AF0;color:white"><i class="ti ti-file-type-csv"></i> CSV</button><button class="btn-save" data-f="pdf" style="justify-content:center;background:#e05555;color:white"><i class="ti ti-file-type-pdf"></i> PDF</button></div></div></div>`;document.body.appendChild(ov);ov.querySelector('#ex-close').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.querySelectorAll('[data-f]').forEach(b=>b.onclick=async()=>{try{b.disabled=true;const sort=ov.querySelector('#ex-sort').value;const rows=isP?productRows(sort):await customerRows(sort);const d=new Date().toISOString().slice(0,10),base=`lamsay-${type}-${d}`;if(b.dataset.f==='xlsx')await saveXLSX(rows,base,isP?'المنتجات':'العملاء');else if(b.dataset.f==='csv')saveCSV(rows,base);else printPDF(rows,isP?'تقرير المنتجات — لمسة':'تقرير العملاء — لمسة');ov.remove()}catch(e){console.error(e);toast('❌ فشل التصدير: '+e.message);b.disabled=false}})}
+  window.openProductsExport=()=>dialog('products');window.openCustomersExport=()=>dialog('customers');
+  window.exportProductsCSV=window.openProductsExport;window.exportCustomersCSV=window.openCustomersExport;
+  const previous=window.exportCSV;window.exportCSV=function(){const id=document.querySelector('.tab.act')?.id||'';if(id==='tab-products')return dialog('products');if(id==='tab-customers'||id==='tab-reports')return dialog('customers');return previous&&previous()};
 })();
 </script>
 
