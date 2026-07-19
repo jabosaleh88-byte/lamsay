@@ -919,37 +919,74 @@ function updateCheckoutTotals_m(sub, ship){
 // ============================================================
 // FEATURE 6: PRODUCTS + CURSOR-BASED PAGINATION (max 12/batch)
 // ============================================================
-async function loadProductsPage(reset=false){
-  if(allLoaded && !reset) return;
-  if(reset){ lastDoc=null; allLoaded=false; document.getElementById('prods-grid') && (document.getElementById('prods-grid').innerHTML=''); }
-  const loadBtn = document.getElementById('load-more-btn');
-  if(loadBtn) loadBtn.disabled = true;
-  try {
-    let q = db.collection('products').orderBy('created_at','desc').limit(PAGE_SIZE);
-    if(lastDoc) q = q.startAfter(lastDoc);
-    const snap = await q.get();
-    if(snap.empty||snap.docs.length<PAGE_SIZE){ allLoaded=true; if(loadBtn) loadBtn.style.display='none'; }
-    if(!snap.empty){ lastDoc = snap.docs[snap.docs.length-1]; renderProds(snap.docs, reset); }
-    if(loadBtn && !allLoaded) loadBtn.disabled=false;
-  } catch(e){ console.warn('loadProductsPage:', e); if(loadBtn) loadBtn.disabled=false; }
-}
-function renderProds(docs, reset=false){
-  var msk2=document.getElementById('m-skeleton-grid');if(msk2)msk2.style.display='none';
+let APP_PRODUCTS = [];
+let activeAppCategory = 'all';
 
+function productTimestamp(p){
+  const v = p.createdAt || p.created_at || p.updatedAt || p.updated_at;
+  if (!v) return 0;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.seconds === 'number') return v.seconds * 1000;
+  const n = new Date(v).getTime();
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeProductForApp(raw, id){
+  // This creates a display-only copy. The original Firestore document and all
+  // of its prices, names, images, descriptions and other fields remain intact.
+  return {
+    ...raw,
+    id,
+    name: raw.name ?? raw.nameAr ?? raw.name_ar ?? raw.nameEn ?? raw.name_en ?? '',
+    description: raw.description ?? raw.descAr ?? raw.desc_ar ?? raw.desc ?? '',
+    image: raw.image ?? raw.image_url ?? raw.imageUrl ?? raw.img ?? '',
+    old_price: raw.old_price ?? raw.oldPrice ?? raw.regularPrice ?? null,
+    category: raw.category ?? raw.cat ?? '',
+    visible: raw.visible
+  };
+}
+
+async function loadProductsPage(reset=false){
+  if(!reset && APP_PRODUCTS.length) return;
+  const loadBtn = document.getElementById('load-more-btn');
+  if(loadBtn){ loadBtn.disabled=true; loadBtn.style.display='none'; }
+  try {
+    const snap = await db.collection('products').get();
+    APP_PRODUCTS = snap.docs
+      .map(doc => normalizeProductForApp(doc.data(), doc.id))
+      .filter(p => p.visible !== false && p.name);
+    APP_PRODUCTS.sort((a,b)=>productTimestamp(b)-productTimestamp(a));
+    renderProds(APP_PRODUCTS, true);
+    allLoaded=true;
+    lastDoc=null;
+  } catch(e){
+    console.error('loadProductsPage:', e);
+    const grid=document.getElementById('prods-grid');
+    if(grid) grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#aaa">تعذّر تحميل المنتجات مؤقتًا. يرجى تحديث الصفحة.</div>';
+  } finally {
+    if(loadBtn) loadBtn.disabled=false;
+  }
+}
+
+function renderProds(items, reset=false){
+  var msk2=document.getElementById('m-skeleton-grid');if(msk2)msk2.style.display='none';
   const grid = document.getElementById('prods-grid');
   if(!grid) return;
-  const html = docs.map(doc=>{
-    const d = doc.data();
+  const html = items.map(item=>{
+    const d = typeof item.data === 'function' ? normalizeProductForApp(item.data(), item.id) : item;
     const price = parseFloat(d.price)||0;
-    const img = d.image_url||d.image||d.img||'https://placehold.co/300x300?text=No+Img';
+    const img = d.image_url||d.imageUrl||d.image||d.img||'https://placehold.co/300x300?text=No+Img';
+    const name = d.name||d.nameAr||d.name_ar||'منتج';
+    const oldPrice = d.old_price ?? d.oldPrice;
+    const safeData = JSON.stringify(d).replace(/'/g,"&#39;");
     return `
-      <div class="prod-card" onclick="openProdSheet('${doc.id}',${JSON.stringify(d).replace(/'/g,"&#39;")})">
-        <img src="${img}" alt="${d.name||''}" loading="lazy" class="prod-card-img">
+      <div class="prod-card" onclick="openProdSheet('${d.id}',${safeData})">
+        <img src="${img}" alt="${name}" loading="lazy" class="prod-card-img">
         <div class="prod-card-body">
-          <div class="prod-card-name">${d.name||'منتج'}</div>
+          <div class="prod-card-name">${name}</div>
           <div class="prod-card-price">${formatPrice(price)}</div>
-          ${d.old_price?'<div class="prod-card-old">'+formatPrice(d.old_price)+'</div>':''}
-          <button class="add-to-cart-btn" onclick="event.stopPropagation();addToCart('${doc.id}',${JSON.stringify(d.name||'').replace(/`/g,"'")},${price},${JSON.stringify(img)})">
+          ${oldPrice?'<div class="prod-card-old">'+formatPrice(oldPrice)+'</div>':''}
+          <button class="add-to-cart-btn" onclick="event.stopPropagation();addToCart('${d.id}',${JSON.stringify(name).replace(/`/g,"'")},${price},${JSON.stringify(img)})">
             🛒 أضف للسلة
           </button>
         </div>
@@ -958,21 +995,16 @@ function renderProds(docs, reset=false){
   }).join('');
   if(reset) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
 }
+
 function filterCat(cat){
-  document.querySelectorAll('.cat-chip').forEach(c=>c.classList.toggle('active', c.dataset.cat===cat));
-  // Reset and load filtered
-  lastDoc=null; allLoaded=false;
-  const grid=document.getElementById('prods-grid');
-  if(grid) grid.innerHTML='';
+  activeAppCategory = cat || 'all';
+  document.querySelectorAll('.cat-chip').forEach(c=>c.classList.toggle('active', c.dataset.cat===activeAppCategory));
+  const filtered = activeAppCategory === 'all'
+    ? APP_PRODUCTS
+    : APP_PRODUCTS.filter(p => (p.category || p.cat) === activeAppCategory);
+  renderProds(filtered, true);
   const loadBtn=document.getElementById('load-more-btn');
-  if(loadBtn){ loadBtn.style.display='inline-block'; loadBtn.disabled=true; }
-  let q = db.collection('products').orderBy('created_at','desc').limit(PAGE_SIZE);
-  if(cat&&cat!=='all') q = db.collection('products').where('category','==',cat).orderBy('created_at','desc').limit(PAGE_SIZE);
-  q.get().then(snap=>{
-    if(snap.empty||snap.docs.length<PAGE_SIZE){ allLoaded=true; if(loadBtn) loadBtn.style.display='none'; }
-    if(!snap.empty){ lastDoc=snap.docs[snap.docs.length-1]; renderProds(snap.docs,true); }
-    if(loadBtn&&!allLoaded) loadBtn.disabled=false;
-  }).catch(e=>console.warn('filterCat:',e));
+  if(loadBtn) loadBtn.style.display='none';
 }
 
 // ============================================================

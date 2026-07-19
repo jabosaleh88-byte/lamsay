@@ -1048,35 +1048,61 @@ const STATIC_PRODUCTS = [
 /* ── Load first batch of products from Firestore (pagination) ── */
 async function loadProductsPage(reset=false) {
   if (!fbReady || _loadingMore) return;
+  // Load the complete catalogue exactly as stored in Firestore. This query
+  // deliberately avoids orderBy/inequality combinations so older products
+  // without createdAt or visible fields are not excluded.
+  if (!reset) return;
   _loadingMore = true;
   updateLoadMoreBtn(true);
   try {
-    let q = db.collection('products').where('visible','!=',false).orderBy('visible').orderBy('createdAt','desc').limit(CONFIG.PAGE_SIZE);
-    if (!reset && _lastDoc) q = q.startAfter(_lastDoc);
-    const snap = await q.get();
-    if (snap.empty && reset) {
-      // Firestore empty, use static products
+    const snap = await db.collection('products').get();
+    if (snap.empty) {
       PRODUCTS = [...STATIC_PRODUCTS];
     } else {
-      const fresh = snap.docs.map(d => ({...d.data(), id: d.id})).filter(p => p.nameAr && p.visible !== false);
-      if (reset) PRODUCTS = fresh; else PRODUCTS = [...PRODUCTS, ...fresh];
-      _lastDoc = snap.docs[snap.docs.length - 1] || null;
-      _hasMore = snap.docs.length === CONFIG.PAGE_SIZE;
+      const fresh = snap.docs
+        .map(d => ({...d.data(), id: d.id}))
+        .filter(p => p.visible !== false && (p.nameAr || p.name || p.name_ar));
+
+      // Sort only the in-memory copies; no Firestore product data is written
+      // or modified. Products without dates remain included.
+      fresh.sort((a,b) => {
+        const value = x => {
+          const v = x.createdAt || x.created_at || x.updatedAt || x.updated_at;
+          if (!v) return 0;
+          if (typeof v.toMillis === 'function') return v.toMillis();
+          if (typeof v.seconds === 'number') return v.seconds * 1000;
+          const n = new Date(v).getTime();
+          return Number.isFinite(n) ? n : 0;
+        };
+        return value(b) - value(a);
+      });
+      PRODUCTS = fresh;
     }
-    // Also load from localStorage (admin-added products)
+
+    // Keep locally saved legacy products visible without overwriting any
+    // Firestore product sharing the same id.
     try {
-      const saved = JSON.parse(localStorage.getItem('lamsay_products')||'[]');
-      if (saved.length) PRODUCTS = [...PRODUCTS, ...saved.filter(p=>!PRODUCTS.find(x=>String(x.id)===String(p.id)))];
-    } catch(e) {}
-  } catch(e) {
-    // Fallback
-    PRODUCTS = [...STATIC_PRODUCTS];
+      const saved = JSON.parse(localStorage.getItem('lamsay_products') || '[]');
+      if (Array.isArray(saved) && saved.length) {
+        PRODUCTS = [...PRODUCTS, ...saved.filter(p => !PRODUCTS.find(x => String(x.id) === String(p.id)))];
+      }
+    } catch(e) { console.warn('Legacy local products could not be read:', e); }
+
+    _lastDoc = null;
     _hasMore = false;
+  } catch(e) {
+    console.error('Failed to load Firestore products:', e);
+    // Do not replace a previously loaded real catalogue because of a temporary
+    // network error. Static products are used only when nothing has loaded.
+    if (!PRODUCTS.length) PRODUCTS = [...STATIC_PRODUCTS];
+    _hasMore = false;
+  } finally {
+    _loadingMore = false;
+    updateLoadMoreBtn(false);
+    curFilter === 'all' ? curProds = [...PRODUCTS] : curProds = PRODUCTS.filter(p => p.cat === curFilter || p.category === curFilter);
+    renderCats();
+    renderProds();
   }
-  _loadingMore = false;
-  updateLoadMoreBtn(false);
-  curFilter === 'all' ? curProds = [...PRODUCTS] : curProds = PRODUCTS.filter(p=>p.cat===curFilter);
-  renderCats(); renderProds();
 }
 
 function loadMoreProducts() {
@@ -1098,9 +1124,18 @@ function updateLoadMoreBtn(loading) {
 /* ── Realtime product updates from Firestore ── */
 function startProductListener() {
   if (!fbReady) return;
-  // Products are loaded through cursor pagination. Do not attach an unbounded
-  // collection listener here, because it downloads the whole catalogue and
-  // overrides the paginated result on every change.
+  // Keep the complete catalogue synchronized. This listener reads product
+  // documents but never writes to or changes their stored fields.
+  db.collection('products').onSnapshot(snap => {
+    if (snap.empty) return;
+    const fresh = snap.docs
+      .map(d => ({...d.data(), id: d.id}))
+      .filter(p => p.visible !== false && (p.nameAr || p.name || p.name_ar));
+    PRODUCTS = fresh;
+    curFilter === 'all' ? curProds = [...PRODUCTS] : curProds = PRODUCTS.filter(p => p.cat === curFilter || p.category === curFilter);
+    renderCats();
+    renderProds();
+  }, error => console.warn('Product listener:', error));
   // Settings
   db.collection('settings').doc('store').onSnapshot(doc => {
     if (doc.exists) {

@@ -16,3 +16,10 @@ Not changed because the required source was not included:
 - Firestore Rules
 - Firebase Storage Rules
 - Firebase Authentication console settings
+
+
+PRODUCT CATALOGUE RESTORATION
+- Restored complete Firestore catalogue loading without composite-index requirements.
+- Included legacy products that do not have createdAt/created_at or visible fields.
+- Added read-only field aliases in app.html so existing names, prices, images and descriptions render unchanged.
+- No product document is written, migrated, renamed or modified.
