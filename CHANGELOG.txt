@@ -1,0 +1,18 @@
+Lamsay — Priority Fixes
+
+- Normalized deploy filenames: index.html, app.html, admin.html.
+- Removed public links to the administration page.
+- Added noindex protections for admin.html.
+- Removed contradictory/unverified marketing and shipping claims.
+- Kept shipping fees database-driven and shown after province selection.
+- Pinned Tabler Icons Webfont to version 3.44.0.
+- Enabled browser zoom and viewport-fit support.
+- Stopped the public desktop page from downloading the full product collection through an unbounded realtime listener; pagination remains authoritative.
+- Added robots.txt and sitemap.xml.
+- Updated static security headers and removed obsolete X-XSS-Protection.
+- Preserved Firebase project configuration, collections, checkout, coupons, orders and admin authentication.
+
+Not changed because the required source was not included:
+- Firestore Rules
+- Firebase Storage Rules
+- Firebase Authentication console settings

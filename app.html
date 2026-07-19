@@ -2,13 +2,13 @@
 <html lang="ar" dir="rtl" id="root">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="تطبيق لمسة — تسوق منتجات الجمال، العطور والأزياء في الأردن بأسعار مميزة. شحن لجميع المحافظات بـ 3 دنانير.">
+<meta name="description" content="تطبيق لمسة — تسوق منتجات الجمال، العطور والأزياء في الأردن بأسعار مميزة. توصيل لجميع محافظات الأردن.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://lamsay.com/app.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://lamsay.com/app.html">
 <meta property="og:title" content="لمسة — تطبيق الجمال في الأردن">
-<meta property="og:description" content="تسوق منتجات الجمال، العطور والأزياء بأسعار مميزة. شحن لجميع محافظات الأردن بـ 3 دنانير">
+<meta property="og:description" content="تسوق منتجات الجمال، العطور والأزياء بأسعار مميزة. توصيل لجميع محافظات الأردن">
 <meta property="og:image" content="https://lamsay.com/og-image.jpg">
 <meta property="og:locale" content="ar_JO">
 <meta property="og:site_name" content="لمسة — Lamsay">
@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -348,7 +348,7 @@ input,select,textarea{min-height:44px}
   <div class="top-actions">
     <button class="top-btn" onclick="openLangModal()"><i class="ti ti-world"></i></button>
     <button class="top-btn" id="auth-btn-top" onclick="openAuthSheet()"><i class="ti ti-user"></i></button>
-    <button class="top-btn" onclick="openCartPage()">
+    <button class="top-btn" type="button" aria-label="فتح سلة التسوق" onclick="openCartPage()">
       <i class="ti ti-shopping-cart"></i>
       <span class="badge" id="top-badge">0</span>
     </button>

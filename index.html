@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://lamsay.com/">
 <meta property="og:title" content="لمسة — متجر الأردن للجمال والعطور والأزياء">
-<meta property="og:description" content="أفضل منتجات الجمال، العطور، الأزياء والبهارات بالدينار الأردني. شحن لجميع محافظات الأردن بـ 3 د.أ">
+<meta property="og:description" content="أفضل منتجات الجمال، العطور، الأزياء والبهارات بالدينار الأردني. توصيل لجميع محافظات الأردن">
 <meta property="og:image" content="https://lamsay.com/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -25,12 +25,12 @@
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>lamsay — متجر لمسة الأردن</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
@@ -368,12 +368,11 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 <body>
 <!-- TOPBAR -->
 <div class="topbar">
-<div id="tb-msg">✨ شحن لجميع محافظات الأردن بـ 3 د.أ • واتساب: <a href="https://wa.me/962778827075" target="_blank" style="color:var(--black);font-weight:800;text-decoration:underline">0778827075</a></div>
+<div id="tb-msg">✨ توصيل لجميع محافظات الأردن • واتساب: <a href="https://wa.me/962778827075" target="_blank" style="color:var(--black);font-weight:800;text-decoration:underline">0778827075</a></div>
 <div class="tb-right">
 <a href="https://www.instagram.com/lamsay.jo" target="_blank" id="tb-insta">📸 انستقرام</a>
 <a href="https://www.facebook.com/lamsay.jo" target="_blank">👍 فيسبوك</a>
 <a href="https://www.snapchat.com/add/lamsay.jo" target="_blank">👻 سناب</a>
-<a href="admin.html">لوحة التحكم</a>
 </div>
 <div class="tb-controls">
 <button class="tb-btn" onclick="toggleLang()" id="tb-lang">EN</button>
@@ -424,7 +423,7 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 
 <!-- TICKER -->
 <div class="ticker"><span class="ticker-inner" id="ticker-txt">
-🌟 خصم 25% على منتجات نيفيا اليوم فقط &nbsp;•&nbsp; 🚚 شحن مجاني فوق 20 د.أ لجميع محافظات الأردن &nbsp;•&nbsp; 🌸 عطور شانيل وديور بأسعار حصرية &nbsp;•&nbsp; ✨ جميع المنتجات أصلية مضمونة
+✨ تشكيلة مختارة ومتجددة &nbsp;•&nbsp; 🚚 التوصيل متاح لجميع محافظات الأردن &nbsp;•&nbsp; 💬 خدمة الطلب والمتابعة عبر واتساب &nbsp;•&nbsp; 🔒 معلومات طلبك تُستخدم لإتمام الشراء فقط
 </span></div>
 
 <!-- HERO -->
@@ -438,7 +437,7 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 </div>
 <div class="hero-stats">
 <div><div class="kpi-num">+200</div><div class="kpi-lbl">منتج متنوع</div></div>
-<div><div class="kpi-num">+18K</div><div class="kpi-lbl">عميل سعيد</div></div>
+<div><div class="kpi-num">12</div><div class="kpi-lbl">محافظة نخدمها</div></div>
 <div><div class="kpi-num">12</div><div class="kpi-lbl">محافظة أردنية</div></div>
 <div><div class="kpi-num">24/7</div><div class="kpi-lbl">دعم مستمر</div></div>
 </div>
@@ -446,7 +445,7 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 
 <!-- PROMISES -->
 <div class="promises">
-<div class="promise"><div class="prom-icon"><i class="ti ti-truck"></i></div><div><div class="prom-title">شحن مجاني</div><div class="prom-sub">للطلبات فوق 20 د.أ</div></div></div>
+<div class="promise"><div class="prom-icon"><i class="ti ti-truck"></i></div><div><div class="prom-title">توصيل لجميع المحافظات</div><div class="prom-sub">تظهر الرسوم بعد اختيار المحافظة</div></div></div>
 <div class="promise"><div class="prom-icon"><i class="ti ti-map-pin"></i></div><div><div class="prom-title">توصيل لكل الأردن</div><div class="prom-sub">جميع المحافظات الـ 12</div></div></div>
 <div class="promise"><div class="prom-icon"><i class="ti ti-shield-check"></i></div><div><div class="prom-title">أصلي 100%</div><div class="prom-sub">مضمون ومرخّص</div></div></div>
 <div class="promise"><div class="prom-icon"><i class="ti ti-brand-whatsapp"></i></div><div><div class="prom-title">واتساب 24/7</div><div class="prom-sub">رد فوري على طلبك</div></div></div>
@@ -539,7 +538,6 @@ footer{background:var(--dark);border-top:1px solid var(--dark4);padding:52px 32p
 <a href="#">سياسة الإرجاع</a>
 <a href="#">الشحن والتوصيل</a>
 <a href="#">الأسئلة الشائعة</a>
-<a href="admin.html">لوحة التحكم</a>
 </div>
 </div>
 <div>
@@ -1100,12 +1098,9 @@ function updateLoadMoreBtn(loading) {
 /* ── Realtime product updates from Firestore ── */
 function startProductListener() {
   if (!fbReady) return;
-  db.collection('products').where('visible','!=',false).onSnapshot(snap => {
-    if (!snap.empty) {
-      const fresh = snap.docs.map(d=>({...d.data(),id:d.id})).filter(p=>p.nameAr&&p.visible!==false);
-      if (fresh.length > 0) { PRODUCTS = fresh; renderCats(); renderProds(); }
-    }
-  }, ()=>{});
+  // Products are loaded through cursor pagination. Do not attach an unbounded
+  // collection listener here, because it downloads the whole catalogue and
+  // overrides the paginated result on every change.
   // Settings
   db.collection('settings').doc('store').onSnapshot(doc => {
     if (doc.exists) {
